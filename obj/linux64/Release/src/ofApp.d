@@ -320,7 +320,10 @@ obj/linux64/Release/src/ofApp.o: \
  ../../../libs/openFrameworks/video/ofVideoPlayer.h \
  ../../../libs/openFrameworks/3d/of3dUtils.h \
  ../../../libs/openFrameworks/3d/ofCamera.h \
- ../../../libs/openFrameworks/3d/ofEasyCam.h
+ ../../../libs/openFrameworks/3d/ofEasyCam.h \
+ /home/rodrigo-rodrigues/Aplications/OpenFrameworks/apps/myApps/snake-game/src/Snake.h \
+ /home/rodrigo-rodrigues/Aplications/OpenFrameworks/apps/myApps/snake-game/src/cg_extras.h \
+ /home/rodrigo-rodrigues/Aplications/OpenFrameworks/apps/myApps/snake-game/src/cg_drawing_extras.h
 /home/rodrigo-rodrigues/Aplications/OpenFrameworks/apps/myApps/snake-game/src/ofApp.h:
 ../../../libs/openFrameworks/ofMain.h:
 ../../../libs/openFrameworks/utils/ofConstants.h:
@@ -643,3 +646,6 @@ obj/linux64/Release/src/ofApp.o: \
 ../../../libs/openFrameworks/3d/of3dUtils.h:
 ../../../libs/openFrameworks/3d/ofCamera.h:
 ../../../libs/openFrameworks/3d/ofEasyCam.h:
+/home/rodrigo-rodrigues/Aplications/OpenFrameworks/apps/myApps/snake-game/src/Snake.h:
+/home/rodrigo-rodrigues/Aplications/OpenFrameworks/apps/myApps/snake-game/src/cg_extras.h:
+/home/rodrigo-rodrigues/Aplications/OpenFrameworks/apps/myApps/snake-game/src/cg_drawing_extras.h:

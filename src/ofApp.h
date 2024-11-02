@@ -7,7 +7,13 @@
 
 #include "ofMain.h"
 
+#include "Snake.h"
 class ofApp : public ofBaseApp{
+	Snake* snake;
+
+	int GAME_PAUSED = 0;
+	Direction last_direction = NONE;
+
 	public:
 		void setup();
 		void update();

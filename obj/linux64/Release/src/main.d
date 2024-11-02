@@ -320,7 +320,8 @@ obj/linux64/Release/src/main.o: \
  ../../../libs/openFrameworks/3d/of3dUtils.h \
  ../../../libs/openFrameworks/3d/ofCamera.h \
  ../../../libs/openFrameworks/3d/ofEasyCam.h \
- /home/rodrigo-rodrigues/Aplications/OpenFrameworks/apps/myApps/snake-game/src/ofApp.h
+ /home/rodrigo-rodrigues/Aplications/OpenFrameworks/apps/myApps/snake-game/src/ofApp.h \
+ /home/rodrigo-rodrigues/Aplications/OpenFrameworks/apps/myApps/snake-game/src/Snake.h
 ../../../libs/openFrameworks/ofMain.h:
 ../../../libs/openFrameworks/utils/ofConstants.h:
 ../../../libs/tess2/include/tesselator.h:
@@ -643,3 +644,4 @@ obj/linux64/Release/src/main.o: \
 ../../../libs/openFrameworks/3d/ofCamera.h:
 ../../../libs/openFrameworks/3d/ofEasyCam.h:
 /home/rodrigo-rodrigues/Aplications/OpenFrameworks/apps/myApps/snake-game/src/ofApp.h:
+/home/rodrigo-rodrigues/Aplications/OpenFrameworks/apps/myApps/snake-game/src/Snake.h:
