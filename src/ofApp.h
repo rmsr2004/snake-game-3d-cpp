@@ -6,8 +6,10 @@
 #pragma once
 
 #include "ofMain.h"
-
 #include "Snake.h"
+
+#define WINDOW_WIDTH 	1024	// The width of the window
+#define WINDOW_HEIGHT 	768		// The height of the window
 
 /**
 * @enum DisplayMode
@@ -50,6 +52,7 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 		void toggleDisplayMode();
+		bool check_collision();
 };
 
 // end of ofApp.h

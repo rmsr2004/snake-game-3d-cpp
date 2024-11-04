@@ -68,6 +68,7 @@ class Snake {
         ~Snake();
         void draw_snake();
         void resize(int w, int h);
+        void move();
         Direction get_direction();
         void set_direction(Direction direction);
         ofVec3f get_position();

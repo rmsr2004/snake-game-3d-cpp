@@ -52,7 +52,7 @@ Snake::~Snake() {
  */
 void Snake::draw_snake(){
     glColor3f(1.0f, 1.0f, 1.0f);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     
     glPushMatrix();
         glTranslatef(head->position.x, head->position.y, head->position.z);
@@ -84,6 +84,24 @@ void Snake::resize(int w, int h){
     int new_y = current_position.y * factor_y;
     
     set_position(ofVec3f(new_x, new_y, 0));
+}
+
+/**
+* @brief Moves the snake in the current direction.
+*
+* This function updates the position of the snake based on its current direction.
+* The direction can be UP, DOWN, LEFT, or RIGHT, and the position is updated
+* accordingly by adding a unit vector in the respective direction.
+*/
+void Snake::move(){
+    if(get_direction() == UP)
+        set_position(get_position() + ofVec3f(0, -1, 0));	
+    else if(get_direction() == DOWN)
+        set_position(get_position() + ofVec3f(0, 1, 0));	
+    else if(get_direction() == LEFT)
+        set_position(get_position() + ofVec3f(-1, 0, 0));	
+    else if(get_direction() == RIGHT)
+        set_position(get_position() + ofVec3f(1, 0, 0));	
 }
 
 /**

@@ -16,21 +16,35 @@ void ofApp::setup(){
 }
 
 void ofApp::update(){
-	/*
-	*	Snake movement logic
-	*/
-
+	/*	Snake Movement	*/
 	if(GAME_PAUSED != 1){
-		if(snake->get_direction() == UP)
-			snake->set_position(snake->get_position() + ofVec3f(0, -1, 0));	// Move the snake
-		else if(snake->get_direction() == DOWN)
-			snake->set_position(snake->get_position() + ofVec3f(0, 1, 0));	// Move the snake
-		else if(snake->get_direction() == LEFT)
-			snake->set_position(snake->get_position() + ofVec3f(-1, 0, 0));	// Move the snake
-		else if(snake->get_direction() == RIGHT)
-			snake->set_position(snake->get_position() + ofVec3f(1, 0, 0));	// Move the snake
-
+		snake->move();
 		last_direction = snake->get_direction();
+
+		if(check_collision()){
+			GAME_PAUSED = 1;
+
+			Direction current_direction = snake->get_direction();
+			ofVec3f current_position = snake->get_position();
+			switch(current_direction){
+			case UP:
+				snake->set_position(ofVec3f(current_position.x, SNAKE_SIZE/2, 0));
+				break;
+			case DOWN:
+				snake->set_position(ofVec3f(current_position.x, gh()-SNAKE_SIZE/2, 0));
+				break;
+			case LEFT:
+				snake->set_position(ofVec3f(SNAKE_SIZE/2, current_position.y, 0));
+				break;
+			case RIGHT:
+				snake->set_position(ofVec3f(gw()-SNAKE_SIZE/2, current_position.y, 0));
+				break;
+			case NONE:
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 	if(GAME_PAUSED == 1){
@@ -45,7 +59,7 @@ void ofApp::draw(){
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glPushMatrix();
 		glTranslatef(gw()/2, gh()/2, 0);
-		glScalef(gw()-SNAKE_SIZE, gh()-SNAKE_SIZE, 1);
+		glScalef(gw(), gh(), 1);
 		cube_unit();
 	glPopMatrix();
 
@@ -69,7 +83,9 @@ void ofApp::keyPressed(int key){
 		}
 		snake->set_direction(DOWN);
 		break;
-	case OF_KEY_LEFT:
+	case OF_KEY_LEFT:	/*
+	*	Snake movement logic
+	*/
 	case 'a':
 		if(snake->get_direction() == RIGHT || snake->get_direction() == LEFT){
 			break;
@@ -146,4 +162,25 @@ void ofApp::toggleDisplayMode(){
 		display_mode = WINDOWED;
 	}
 }
+
+/**
+* @brief Checks if the snake has collided with the boundaries of the game window.
+* 
+* This function retrieves the current position of the snake and checks if it has 
+* collided with the edges of the game window. The collision is determined based on 
+* the snake's size and the dimensions of the game window.
+* 
+* @return true if the snake has collided with the boundaries, false otherwise.
+*/
+bool ofApp::check_collision(){
+	ofVec3f snake_pos = snake->get_position();
+	if(
+		snake_pos.x < SNAKE_SIZE/2 || snake_pos.x > gw()-SNAKE_SIZE/2 || snake_pos.y < SNAKE_SIZE/2 
+		|| snake_pos.y > gh()-SNAKE_SIZE/2
+	){
+		return true;
+	}
+	return false;
+}
+
 // end of ofApp.cpp
