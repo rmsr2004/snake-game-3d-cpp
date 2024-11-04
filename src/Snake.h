@@ -9,6 +9,13 @@
 
 #define SNAKE_SIZE 25
 
+
+/**
+* @enum Direction
+* @brief Represents the possible directions for the snake's movement.
+* 
+* Defines the possible directions that the snake can move in the game.
+*/
 typedef enum {
     UP,
     DOWN,
@@ -17,6 +24,13 @@ typedef enum {
     NONE
 } Direction;
 
+/**
+* @struct Segment
+* @brief Represents a segment of the snake in the game.
+*
+* This structure holds the position of a segment in 3D space,
+* represented by an ofVec3f object.
+*/
 typedef struct Segment {
     ofVec3f position;
 
@@ -24,6 +38,14 @@ typedef struct Segment {
     Segment(ofVec3f pos) : position(pos) {}
 } Segment;
 
+/**
+* @struct SnakeBody
+* @brief Represents a segment of the snake's body in the snake game.
+* 
+* This structure is used to link segments of the snake's body together.
+* Each segment points to the next segment in the snake's body.
+* 
+*/
 typedef struct {
     Segment* segment;
     Segment* next;
@@ -45,6 +67,7 @@ class Snake {
         Snake(ofVec3f pos);
         ~Snake();
         void draw_snake();
+        void resize(int w, int h);
         Direction get_direction();
         void set_direction(Direction direction);
         ofVec3f get_position();

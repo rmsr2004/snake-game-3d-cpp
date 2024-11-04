@@ -9,6 +9,8 @@
 #include "cg_extras.h"
 #include "cg_drawing_extras.h"
 
+using namespace std;
+
 void ofApp::setup(){
 	snake = new Snake(ofVec3f(gw()/2, gh()/2, 0));	// Create a new snake at the center of the screen
 }
@@ -44,7 +46,7 @@ void ofApp::draw(){
 	glPushMatrix();
 		glTranslatef(gw()/2, gh()/2, 0);
 		glScalef(gw()-SNAKE_SIZE, gh()-SNAKE_SIZE, 1);
-		malha_unit(gw()/SNAKE_SIZE, gh()/SNAKE_SIZE);
+		cube_unit();
 	glPopMatrix();
 
 	snake->draw_snake();	// Draw the snake
@@ -97,6 +99,8 @@ void ofApp::keyPressed(int key){
 		break;
 	case OF_KEY_F12:
 		// Switch between fullscreen and windowed mode
+		last_witdh = gw(), last_height = gh();
+		toggleDisplayMode();
 		ofToggleFullscreen();
 		break;
 	}	
@@ -116,10 +120,30 @@ void ofApp::mouseEntered(int x, int y){}
 
 void ofApp::mouseExited(int x, int y){}
 
-void ofApp::windowResized(int w, int h){}
+void ofApp::windowResized(int w, int h){
+	if(last_display_mode != display_mode){
+		snake->resize(last_witdh, last_height);
+		last_display_mode = display_mode;
+	}
+	return;
+}
 
 void ofApp::gotMessage(ofMessage msg){}
 
 void ofApp::dragEvent(ofDragInfo dragInfo){}
 
+/**
+* @brief Toggles the display mode between windowed and fullscreen.
+*
+* This function switches the display mode of the application. If the current
+* display mode is windowed, it changes to fullscreen. If the current display
+* mode is fullscreen, it changes to windowed.
+*/
+void ofApp::toggleDisplayMode(){
+	if(display_mode == WINDOWED){
+		display_mode = FULLSCREEN;
+	} else{
+		display_mode = WINDOWED;
+	}
+}
 // end of ofApp.cpp

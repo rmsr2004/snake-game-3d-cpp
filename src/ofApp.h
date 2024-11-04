@@ -8,11 +8,30 @@
 #include "ofMain.h"
 
 #include "Snake.h"
+
+/**
+* @enum DisplayMode
+* @brief Enumeration to represent the display mode of the application.
+* 
+* This enumeration defines the possible display modes for the application.
+* It can be either FULLSCREEN or WINDOWED.
+*/
+typedef enum{
+	FULLSCREEN,
+	WINDOWED
+} DisplayMode;
+
 class ofApp : public ofBaseApp{
 	Snake* snake;
 
-	int GAME_PAUSED = 0;
-	Direction last_direction = NONE;
+	int GAME_PAUSED = 0;				// Indicates the paused state of the game. (0 = not paused, 1 = paused)
+	Direction last_direction = NONE;	// The last direction the snake was moving in.
+
+	int last_witdh = 0;
+	int last_height = 0;
+
+	DisplayMode display_mode = WINDOWED;
+	DisplayMode last_display_mode = display_mode;
 
 	public:
 		void setup();
@@ -30,6 +49,7 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
+		void toggleDisplayMode();
 };
 
 // end of ofApp.h

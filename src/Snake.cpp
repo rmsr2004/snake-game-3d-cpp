@@ -8,6 +8,9 @@
 #include <iostream>
 #include "ofApp.h"
 #include "cg_drawing_extras.h"
+#include "cg_extras.h"
+
+using namespace std;
 
 #define NULL nullptr
 
@@ -56,6 +59,31 @@ void Snake::draw_snake(){
         glScalef(SNAKE_SIZE, SNAKE_SIZE, 0);
         cube_unit();
     glPopMatrix();
+}
+
+/**
+* @brief Resizes the snake's position based on the new width and height.
+*
+* This function adjusts the snake's position proportionally to the change in 
+* the width and height of the game area. It calculates the scaling factors 
+* for both the x and y dimensions and applies these factors to the current 
+* position of the snake to determine its new position.
+*
+* @param w The new width of the game area.
+* @param h The new height of the game area.
+*/
+void Snake::resize(int w, int h){
+    int width = gw(), height = gh();
+
+    ofVec3f current_position = get_position();
+
+    double factor_x = static_cast<double>(width) / static_cast<double>(w);
+    double factor_y = static_cast<double>(height) / static_cast<double>(h);
+
+    int new_x = current_position.x * factor_x;
+    int new_y = current_position.y * factor_y;
+    
+    set_position(ofVec3f(new_x, new_y, 0));
 }
 
 /**
