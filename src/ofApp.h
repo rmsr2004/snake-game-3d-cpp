@@ -7,6 +7,7 @@
 
 #include "ofMain.h"
 #include "Snake.h"
+#include "Food.h"
 
 #define WINDOW_WIDTH 	1024	// The width of the window
 #define WINDOW_HEIGHT 	768		// The height of the window
@@ -25,6 +26,7 @@ typedef enum{
 
 class ofApp : public ofBaseApp{
 	Snake* snake;
+	Food* food;
 
 	int GAME_PAUSED = 0;				// Indicates the paused state of the game. (0 = not paused, 1 = paused)
 	Direction last_direction = NONE;	// The last direction the snake was moving in.
@@ -53,6 +55,7 @@ class ofApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
 		void toggleDisplayMode();
 		bool check_collision();
+		int random_number(int min, int max);
 };
 
 // end of ofApp.h

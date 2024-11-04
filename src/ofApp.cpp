@@ -6,6 +6,7 @@
 #include "ofApp.h"
 
 #include "Snake.h"
+#include "Food.h"
 #include "cg_extras.h"
 #include "cg_drawing_extras.h"
 
@@ -13,6 +14,14 @@ using namespace std;
 
 void ofApp::setup(){
 	snake = new Snake(ofVec3f(gw()/2, gh()/2, 0));	// Create a new snake at the center of the screen
+
+	/*
+	*	Creates first food. The first food will always be red and will increase the snake's size.
+	*/
+
+	int food_x = random_number(FOOD_SIZE/2, gw()-FOOD_SIZE/2);
+	int food_y = random_number(FOOD_SIZE/2, gh()-FOOD_SIZE/2);
+	food = new Food(ofVec3f(food_x, food_y, 0), GROWTH, RED);
 }
 
 void ofApp::update(){
@@ -64,6 +73,7 @@ void ofApp::draw(){
 	glPopMatrix();
 
 	snake->draw_snake();	// Draw the snake
+	food->draw_food();		// Draw the food
 }
 
 void ofApp::keyPressed(int key){
@@ -139,6 +149,7 @@ void ofApp::mouseExited(int x, int y){}
 void ofApp::windowResized(int w, int h){
 	if(last_display_mode != display_mode){
 		snake->resize(last_witdh, last_height);
+		food->resize(last_witdh, last_height);
 		last_display_mode = display_mode;
 	}
 	return;
@@ -181,6 +192,17 @@ bool ofApp::check_collision(){
 		return true;
 	}
 	return false;
+}
+
+/**
+* Generates a random integer between the specified minimum and maximum values (inclusive).
+*
+* @param min The minimum value of the random number range.
+* @param max The maximum value of the random number range.
+* @return A random integer between min and max (inclusive).
+*/
+int ofApp::random_number(int min, int max){
+	return min + (rand() % (max - min + 1));
 }
 
 // end of ofApp.cpp
