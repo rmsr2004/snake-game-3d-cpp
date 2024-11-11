@@ -54,7 +54,8 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 		void toggleDisplayMode();
-		bool check_collision();
+		bool check_snake_collision();
+		bool check_food_collision();
 		int random_number(int min, int max);
 };
 

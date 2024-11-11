@@ -21,7 +21,10 @@
 			"vector": "cpp",
 			"format": "cpp",
 			"valarray": "cpp",
-			"iostream": "cpp"
+			"iostream": "cpp",
+			"ostream": "cpp",
+			"*.frag": "cpp",
+			"istream": "cpp"
 		}
 	}
 }

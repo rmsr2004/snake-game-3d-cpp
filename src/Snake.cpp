@@ -15,58 +15,77 @@ using namespace std;
 #define NULL nullptr
 
 /**
- * @brief Constructs a new Snake object with the specified initial position.
- * 
- * @param x The x-coordinate of the snake's initial position.
- * @param y The y-coordinate of the snake's initial position.
- * @param z The z-coordinate of the snake's initial position.
- */
-Snake::Snake(ofVec3f pos) {
-    head = new Segment(pos);
-    speed = 1.0f;
+* @brief Constructs a new Snake object with the specified initial position.
+* 
+* @param pos The initial position of the snake's head.
+*/
+Snake::Snake(ofVec3f pos){
+    head.set(pos);
+    tail.clear();
+    speed = 3.f;
     direction = NONE;
 }
-
 /**
- * @brief Destructor for the Snake class.
- * 
- * This destructor is responsible for cleaning up the dynamically allocated memory
- * for the head of the snake. It ensures that the memory allocated for the head
- * is properly released to prevent memory leaks.
- */
-Snake::~Snake() {
-    delete head;
+* @brief Draws the snake on the screen.
+* 
+* This function is responsible for drawing the snake's head and tail.
+* It first calls the draw_head() function to draw the head of the snake.
+* If the snake has more than one segment in its tail, it then calls the 
+* draw_tail() function to draw the rest of the snake's body.
+*/
+void Snake::draw(){
+    draw_head();
+    if(tail.size() > 1) draw_tail();
 }
-
 /**
- * @brief Draws the snake on the screen.
- * 
- * This function sets the color and polygon mode for drawing the snake.
- * It then applies transformations to position and scale the snake's head
- * before drawing it using the cube_unit() function.
- * 
- * The snake is drawn in white color and in wireframe mode.
- * 
- * @note This function assumes that the head of the snake is a pointer to a 
- *       structure containing the x, y, and z coordinates of the snake's head.
- */
-void Snake::draw_snake(){
+* @brief Draws the head of the snake.
+*
+* This function sets the color to white and fills the polygon mode. It then
+* translates and scales the head of the snake to the appropriate position and
+* size before drawing it using the cube_unit function.
+*/
+void Snake::draw_head(){
     glColor3f(1.0f, 1.0f, 1.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    
+
     glPushMatrix();
-        glTranslatef(head->position.x, head->position.y, head->position.z);
+        glTranslatef(head.x, head.y, head.z);
         glScalef(SNAKE_SIZE, SNAKE_SIZE, 0);
         cube_unit();
     glPopMatrix();
-}
 
+    glEnd();
+}
+/**
+* @brief Draws the tail of the snake.
+* 
+* This function iterates through the segments of the snake's tail and draws each segment as a scaled cube.
+* The tail segments are drawn in blue color.
+* 
+* The function uses OpenGL functions to set the color, polygon mode, and transformations for each tail segment.
+* 
+* @note The first segment of the tail (index 0) is skipped as it is presumably the head of the snake.
+*/
+void Snake::draw_tail(){
+    glColor3f(0.0f, 0.0f, 1.0f);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    
+    for(size_t i = 1; i < tail.size(); i++){
+        glPushMatrix();
+            glTranslatef(tail[i].x, tail[i].y, tail[i].z);
+            glScalef(SNAKE_SIZE, SNAKE_SIZE, 0);
+            cube_unit();
+        glPopMatrix();
+    }
+
+    glEnd();
+}
 /**
 * @brief Resizes the snake's position based on the new width and height.
 *
 * This function adjusts the snake's position proportionally to the change in 
 * the width and height of the game area. It calculates the scaling factors 
-* for both the x and y dimensions and applies these factors to the current 
+* for both the x and y dimensions and applies these factors to the currentent 
 * position of the snake to determine its new position.
 *
 * @param w The new width of the game area.
@@ -75,7 +94,7 @@ void Snake::draw_snake(){
 void Snake::resize(int w, int h){
     int width = gw(), height = gh();
 
-    ofVec3f current_position = get_position();
+    ofVec3f current_position = tail[0];
 
     double factor_x = static_cast<double>(width) / static_cast<double>(w);
     double factor_y = static_cast<double>(height) / static_cast<double>(h);
@@ -83,85 +102,119 @@ void Snake::resize(int w, int h){
     int new_x = current_position.x * factor_x;
     int new_y = current_position.y * factor_y;
     
-    set_position(ofVec3f(new_x, new_y, 0));
+    tail[0] = ofVec3f(new_x, new_y, 0);
 }
-
 /**
 * @brief Moves the snake in the current direction.
-*
-* This function updates the position of the snake based on its current direction.
-* The direction can be UP, DOWN, LEFT, or RIGHT, and the position is updated
-* accordingly by adding a unit vector in the respective direction.
+* 
+* This function updates the position of the snake's head based on the current direction and speed.
+* If the snake has a tail, it updates the positions of the tail segments to follow the head.
 */
 void Snake::move(){
-    if(get_direction() == UP)
-        set_position(get_position() + ofVec3f(0, -1, 0));	
-    else if(get_direction() == DOWN)
-        set_position(get_position() + ofVec3f(0, 1, 0));	
-    else if(get_direction() == LEFT)
-        set_position(get_position() + ofVec3f(-1, 0, 0));	
-    else if(get_direction() == RIGHT)
-        set_position(get_position() + ofVec3f(1, 0, 0));	
-}
+    head = head + get_direction_vector() * speed;
 
+    if(!tail.empty()){
+        vector<ofVec3f> old_tail = tail;
+
+        tail[0] = head;
+        for(size_t i = 1; i < tail.size(); i++){
+            tail[i] = old_tail[i-1];
+        }
+    } 
+}
 /**
-* @brief Gets the current direction of the snake.
+* @brief Handles the effects of eating different types of food.
 * 
-* @return Direction The current direction of the snake.
+* This function is called when the snake eats a piece of food. Depending on the type of food eaten,
+* it will apply different effects to the snake, such as changing its speed, growing, decreasing in size,
+* or becoming invisible.
+* 
+* @param type The type of food eaten by the snake. It can be one of the following:
+* - SUPER_SPEED: Doubles the snake's speed.
+* - SUPER_SLOWDOWN: Halves the snake's speed.
+* - GROWTH: Increases the snake's length.
+* - DECREASE: Decreases the snake's length.
+* - INVISIBLE: Makes the snake invisible.
 */
-Direction Snake::get_direction(){
-    return this->direction;
+void Snake::food_eaten(FoodType type){
+    switch(type){
+    case SUPER_SPEED:
+        speed =  speed * 2;
+        break;
+    case SUPER_SLOWDOWN:
+        speed = speed / 2;
+        break;
+    case GROWTH:
+        grow();
+        break;
+    case DECREASE:
+        decrease();
+        break;
+    case INVISIBLE:
+        invisible();
+        break;
+    }
 }
-
 /**
-* @brief Sets the direction of the snake.
+* @brief Grows the snake by adding a new segment to its tail.
 * 
-* This function updates the direction of the snake to the specified direction.
-* 
-* @param dir The new direction to set for the snake.
+* This function adds a new segment to the snake's tail. If the tail is not empty,
+* it calculates the position of the new segment based on the last segment in the tail
+* and the current direction of the snake. If the tail is empty, it adds the new segment
+* based on the head's position and the current direction of the snake.
 */
-void Snake::set_direction(Direction direction){
-    this->direction = direction;
-}
+void Snake::grow(){
+    if(!tail.empty()){
+        ofVec3f aux = tail[tail.size()-1];
+        ofVec3f current_direction = get_direction_vector();
 
-/**
- * @brief Retrieves the current position of the snake's head.
- * 
- * @return ofVec3f The 3D vector representing the position of the snake's head.
- */
-ofVec3f Snake::get_position(){
-    return ofVec3f(head->position.x, head->position.y, head->position.z);
+        ofVec3f new_segment(
+            aux.x + current_direction.x * SNAKE_SIZE, 
+            aux.y + current_direction.y * SNAKE_SIZE,
+            aux.z + current_direction.z * SNAKE_SIZE
+        );
+        tail.push_back(new_segment);
+    } else {
+        ofVec3f new_segment = head + get_direction_vector() * SNAKE_SIZE;
+        tail.push_back(new_segment);
+    }
 }
-
 /**
- * @brief Sets the position of the snake's head.
- * 
- * This function updates the position of the snake's head to the specified coordinates.
- * 
- * @param position The new position for the snake's head, represented as an ofVec3f object.
- */
-void Snake::set_position(ofVec3f position){
-    this->head->position = position;
+* @brief Get the direction vector based on the current direction of the snake.
+* 
+* This function returns a 3D vector representing the direction in which the snake is moving.
+* The direction is determined by the `direction` member variable of the Snake class.
+* 
+* @return ofVec3f A 3D vector representing the direction of the snake.
+* - (0, -1, 0) if the direction is UP
+* - (0, 1, 0) if the direction is DOWN
+* - (-1, 0, 0) if the direction is LEFT
+* - (1, 0, 0) if the direction is RIGHT
+* - (0, 0, 0) if the direction is NONE or any other undefined value
+*/
+ofVec3f Snake::get_direction_vector(){
+    ofVec3f direction_vector;
+    switch(direction){
+    case UP:
+        direction_vector = ofVec3f(0, -1, 0);
+        break;
+    case DOWN:
+        direction_vector = ofVec3f(0, 1, 0);
+        break;
+    case LEFT:
+        direction_vector = ofVec3f(-1, 0, 0);
+        break;
+    case RIGHT:
+        direction_vector = ofVec3f(1, 0, 0);
+        break;
+    case NONE:
+    default:
+        direction_vector = ofVec3f(0, 0, 0);
+        break;
+    }
+    return direction_vector;
 }
-
-/**
- * @brief Retrieves the current speed of the snake.
- * 
- * @return float The current speed of the snake.
- */
-float Snake::get_speed(){
-    return this->speed;
-}
-
-/**
- * @brief Sets the speed of the snake.
- * 
- * This function sets the speed of the snake to the specified value.
- * 
- * @param speed The new speed value for the snake.
- */
-void Snake::set_speed(float speed){
-    this->speed = speed;
-}
+void Snake::decrease(){}
+void Snake::invisible(){}
 
 // end of Snake.cpp

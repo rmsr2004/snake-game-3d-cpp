@@ -7,7 +7,6 @@
 
 #include "cg_drawing_extras.h"
 
-
 /**
 * @brief Constructs a new Food object.
 * 
@@ -34,7 +33,16 @@ void Food::draw_food(){
         cube_unit();
     glPopMatrix();
 }
-
+/**
+* @brief Resizes the food object based on the new width and height.
+* 
+* This function adjusts the position of the food object according to the new
+* dimensions provided. It calculates the scaling factors for both the x and y
+* coordinates and updates the position of the food object accordingly.
+* 
+* @param w The new width to resize to.
+* @param h The new height to resize to.
+*/
 void Food::resize(int w, int h){
     int width = gw(), height = gh();
 
@@ -48,11 +56,17 @@ void Food::resize(int w, int h){
     
     set_position(ofVec3f(new_x, new_y, 0));
 }
-
+/**
+* @brief Sets the position of the food.
+* 
+* This function updates the position of the food object to the specified
+* coordinates.
+* 
+* @param position The new position of the food as an ofVec3f object.
+*/
 void Food::set_position(ofVec3f position){
     this->position = position;
 }
-
 /**
 * @brief Retrieves the current position of the food.
 * 
@@ -61,7 +75,6 @@ void Food::set_position(ofVec3f position){
 ofVec3f Food::get_position(){
     return this->position;
 }
-
 /**
 * @brief Retrieves the type of the food.
 * 
