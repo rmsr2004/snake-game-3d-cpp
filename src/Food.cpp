@@ -14,7 +14,31 @@
 * @param type The type of the food.
 * @param color The color of the food.
 */
-Food::Food(ofVec3f position, FoodType type, FoodColor color) : position(position), type(type), color(color) {}
+Food::Food(ofVec3f position, FoodType type, int color_index) : color(RED) {
+    this->position = position;
+    this->type = type;
+
+    switch(color_index){
+    case 0:
+        color = RED;
+        break;
+    case 1:
+        color = GREEN;
+        break;
+    case 2:
+        color = BLUE;
+        break;
+    case 3:
+        color = YELLOW;
+        break;
+    case 4:
+        color = BLACK;
+        break;
+    default:
+        color = RED;
+        break;
+    }
+}
 
 /**
 * @brief Draws the food object on the screen.

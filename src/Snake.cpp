@@ -22,8 +22,10 @@ using namespace std;
 Snake::Snake(ofVec3f pos){
     head.set(pos);
     tail.clear();
-    speed = 3.f;
+    speed = 1.f;
     direction = NONE;
+    is_effect = false;
+    is_snake_visible = true;
 }
 /**
 * @brief Draws the snake on the screen.
@@ -34,8 +36,10 @@ Snake::Snake(ofVec3f pos){
 * draw_tail() function to draw the rest of the snake's body.
 */
 void Snake::draw(){
-    draw_head();
-    if(tail.size() > 1) draw_tail();
+    if(is_snake_visible){
+        draw_head();
+        draw_tail();
+    }
 }
 /**
 * @brief Draws the head of the snake.
@@ -67,18 +71,18 @@ void Snake::draw_head(){
 * @note The first segment of the tail (index 0) is skipped as it is presumably the head of the snake.
 */
 void Snake::draw_tail(){
-    glColor3f(0.0f, 0.0f, 1.0f);
+    if(tail.empty()) return;
+    
+    glColor3f(1.0f, 0.0f, 0.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     
-    for(size_t i = 1; i < tail.size(); i++){
+    for(size_t i = 0; i < tail.size(); i++){
         glPushMatrix();
             glTranslatef(tail[i].x, tail[i].y, tail[i].z);
             glScalef(SNAKE_SIZE, SNAKE_SIZE, 0);
             cube_unit();
         glPopMatrix();
     }
-
-    glEnd();
 }
 /**
 * @brief Resizes the snake's position based on the new width and height.
@@ -94,7 +98,7 @@ void Snake::draw_tail(){
 void Snake::resize(int w, int h){
     int width = gw(), height = gh();
 
-    ofVec3f current_position = tail[0];
+    ofVec3f current_position = head;
 
     double factor_x = static_cast<double>(width) / static_cast<double>(w);
     double factor_y = static_cast<double>(height) / static_cast<double>(h);
@@ -102,7 +106,17 @@ void Snake::resize(int w, int h){
     int new_x = current_position.x * factor_x;
     int new_y = current_position.y * factor_y;
     
-    tail[0] = ofVec3f(new_x, new_y, 0);
+    head = ofVec3f(new_x, new_y, 0);
+    
+    // Resize the tail
+    if(!tail.empty()){
+        for(size_t i = 0; i < tail.size(); i++){
+            ofVec3f current_tail = tail[i];
+            int new_tail_x = current_tail.x * factor_x;
+            int new_tail_y = current_tail.y * factor_y;
+            tail[i] = ofVec3f(new_tail_x, new_tail_y, 0);
+        }
+    }
 }
 /**
 * @brief Moves the snake in the current direction.
@@ -111,15 +125,15 @@ void Snake::resize(int w, int h){
 * If the snake has a tail, it updates the positions of the tail segments to follow the head.
 */
 void Snake::move(){
-    head = head + get_direction_vector() * speed;
+    ofVec3f old_head = head;                        // Save the current head position to update the tail
+    head = head + get_direction_vector() * speed;   // Move the head
 
+    // Tail Movement
     if(!tail.empty()){
-        vector<ofVec3f> old_tail = tail;
-
-        tail[0] = head;
-        for(size_t i = 1; i < tail.size(); i++){
-            tail[i] = old_tail[i-1];
+        for(size_t i = tail.size()-1; i > 0; --i){
+            tail[i] = tail[i-1];
         }
+        tail[0] = old_head;
     } 
 }
 /**
@@ -133,25 +147,47 @@ void Snake::move(){
 * - SUPER_SPEED: Doubles the snake's speed.
 * - SUPER_SLOWDOWN: Halves the snake's speed.
 * - GROWTH: Increases the snake's length.
-* - DECREASE: Decreases the snake's length.
 * - INVISIBLE: Makes the snake invisible.
 */
 void Snake::food_eaten(FoodType type){
+    if(is_effect) return;
+
     switch(type){
     case SUPER_SPEED:
-        speed =  speed * 2;
+        if(!is_effect){
+            cout << "SUPER SPEED" << endl;
+            aux_speed = speed;
+            is_effect = true;
+            speed =  speed * 2;
+            effect_time = ofGetElapsedTimef();
+        }
         break;
     case SUPER_SLOWDOWN:
-        speed = speed / 2;
+        if(!is_effect){
+            cout << "SUPER SLOWDOWN" << endl;
+            aux_speed = speed;
+            is_effect = true;
+            speed = speed / 2;
+            effect_time = ofGetElapsedTimef();
+        }
         break;
     case GROWTH:
-        grow();
-        break;
-    case DECREASE:
-        decrease();
+        if(!is_effect){
+            cout << "GROWTH" << endl;
+            grow();
+            speed = speed + .5f;
+        }
         break;
     case INVISIBLE:
-        invisible();
+        if(!is_effect){
+            cout << "INVISIBLE" << endl;
+            is_snake_visible = false;
+            is_effect = true;
+            effect_time = ofGetElapsedTimef();
+        }
+        break;
+    default:
+        cout << "DEFAULT" << endl;
         break;
     }
 }
@@ -168,12 +204,14 @@ void Snake::grow(){
         ofVec3f aux = tail[tail.size()-1];
         ofVec3f current_direction = get_direction_vector();
 
-        ofVec3f new_segment(
-            aux.x + current_direction.x * SNAKE_SIZE, 
-            aux.y + current_direction.y * SNAKE_SIZE,
-            aux.z + current_direction.z * SNAKE_SIZE
-        );
-        tail.push_back(new_segment);
+        for(int i = 0; i < 5; i++){
+            ofVec3f new_segment(
+                aux.x + current_direction.x * SNAKE_SIZE, 
+                aux.y + current_direction.y * SNAKE_SIZE,
+                aux.z + current_direction.z * SNAKE_SIZE
+            );
+            tail.push_back(new_segment);
+        }
     } else {
         ofVec3f new_segment = head + get_direction_vector() * SNAKE_SIZE;
         tail.push_back(new_segment);

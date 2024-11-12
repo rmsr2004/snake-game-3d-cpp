@@ -38,6 +38,12 @@ class Snake {
         float speed;            // The speed of the snake
         Direction direction;    // The direction of the snake
 
+        float aux_speed;        // The speed of the snake before the food effect
+        bool is_effect;         // Indicates if the snake has an effect
+        float effect_time;      // The time the effect lasts
+
+        bool is_snake_visible;  // Indicates if the snake is visible
+
         Snake(ofVec3f pos);
         void draw();
         void draw_head();

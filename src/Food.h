@@ -20,7 +20,6 @@ typedef enum {
     SUPER_SPEED,
     SUPER_SLOWDOWN,
     GROWTH,
-    DECREASE,
     INVISIBLE,
 } FoodType;
 
@@ -61,7 +60,7 @@ class Food {
     FoodColor color;
 
     public:
-        Food(ofVec3f position, FoodType type, FoodColor color);
+        Food(ofVec3f position, FoodType type, int color_index);
 
         void draw_food();
         void resize(int w, int h);

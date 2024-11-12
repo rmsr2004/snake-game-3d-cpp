@@ -29,6 +29,7 @@ class ofApp : public ofBaseApp{
 	Food* food;
 
 	int GAME_PAUSED = 0;				// Indicates the paused state of the game. (0 = not paused, 1 = paused)
+	int GAME_OVER = 0;					// Indicates the game over state. (0 = not over, 1 = over)
 	Direction last_direction = NONE;	// The last direction the snake was moving in.
 
 	int last_witdh = 0;
@@ -54,7 +55,9 @@ class ofApp : public ofBaseApp{
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
 		void toggleDisplayMode();
+		Food* create_food();
 		bool check_snake_collision();
+		bool check_tail_collision();
 		bool check_food_collision();
 		int random_number(int min, int max);
 };

@@ -25,9 +25,7 @@ void ofApp::setup(){
 	*	Creates first food. The first food will always be red and will increase the snake's size.
 	*/
 
-	int food_x = random_number(FOOD_SIZE/2, gw()-FOOD_SIZE/2);
-	int food_y = random_number(FOOD_SIZE/2, gh()-FOOD_SIZE/2);
-	food = new Food(ofVec3f(food_x, food_y, 0), GROWTH, RED);
+	food = create_food();
 }
 /**
 * @brief Updates the game state.
@@ -44,14 +42,38 @@ void ofApp::setup(){
 * If the game is paused, the snake's direction is maintained, and the game remains in a paused state.
 */
 void ofApp::update(){
-	/*	Snake Movement	*/
+	if(GAME_OVER == 1){
+		// Game Over
+		return;
+	}
+
 	if(GAME_PAUSED != 1){
+		if(snake->is_effect){
+			/*
+			*	Verify if the snake has an effect and if the effect time has passed.
+			* 	If the effect time has passed, the snake's speed is restored to its original value.
+			*/
+			if(ofGetElapsedTimef() - snake->effect_time > 5){
+				snake->speed = snake->aux_speed;
+				snake->is_effect = false;
+
+				// If the snake is invisible, make it visible again
+				if(snake->is_snake_visible == false){
+					snake->is_snake_visible = true;
+				}
+			}
+		}
+
 		snake->move();
 		last_direction = snake->direction;
 
 		/*	Collision Detection	*/
 		if(check_snake_collision()){
-			GAME_PAUSED = 1;
+			GAME_OVER = 1;
+		}
+
+		if(check_tail_collision()){
+			GAME_OVER = 1;
 		}
 
 		/*	Food Collision	*/
@@ -60,9 +82,7 @@ void ofApp::update(){
 			snake->food_eaten(food->get_type());
 			
 			// Generate a new food
-			int food_x = random_number(FOOD_SIZE/2, gw()-FOOD_SIZE/2);
-			int food_y = random_number(FOOD_SIZE/2, gh()-FOOD_SIZE/2);
-			food->set_position(ofVec3f(food_x, food_y, 0)); 
+			food = create_food();
 		}
 	}
 
@@ -154,6 +174,13 @@ void ofApp::keyPressed(int key){
 			GAME_PAUSED = 0;
 		}
 		break;
+	case 'r':
+		if(GAME_OVER == 1){
+			// Restart the game
+			GAME_OVER = 0;
+			setup();
+		}
+		break;
 	case OF_KEY_ESC:
 		// Exit the game
 		ofExit();
@@ -207,6 +234,42 @@ void ofApp::toggleDisplayMode(){
 		display_mode = WINDOWED;
 	}
 }
+Food* ofApp::create_food(){
+	// Get a position that is not occupied by the snake
+	int food_x = random_number(FOOD_SIZE/2, gw()-FOOD_SIZE/2);
+	int food_y = random_number(FOOD_SIZE/2, gh()-FOOD_SIZE/2);
+	ofVec3f food_position = ofVec3f(food_x, food_y, 0);
+
+	if(snake->tail.size() > 0){
+		for(size_t i = 0; i < snake->tail.size(); i++){
+			while(snake->tail[i] == food_position){
+				food_x = random_number(FOOD_SIZE/2, gw()-FOOD_SIZE/2);
+				food_y = random_number(FOOD_SIZE/2, gh()-FOOD_SIZE/2);
+				food_position = ofVec3f(food_x, food_y, 0);
+			}
+		}
+	}
+
+	// Food is not on the snake
+	// Generate a random food type and color
+	// Food type must has probabilities (GROWTH(85) > SUPER_SPEED(5) > SUPER_SLOWDOWN(5) > INVISIBLE(5))
+	int random_type = random_number(0, 99);
+	
+	FoodType type;
+	if(random_type < 85){
+		type = GROWTH;
+	} else if(random_type < 90){
+		type = SUPER_SPEED;
+	} else if(random_type < 95){
+		type = SUPER_SLOWDOWN;
+	} else{
+		type = INVISIBLE;
+	}
+
+	int color_index = random_number(0, 4);
+
+	return new Food(food_position, type, color_index);
+}
 /**
 * @brief Checks if the snake has collided with the boundaries of the game window.
 * 
@@ -247,6 +310,27 @@ bool ofApp::check_snake_collision(){
 	return false;
 }
 /**
+* @brief Checks if the snake's head has collided with its tail.
+*
+* This function iterates through the segments of the snake's tail and checks 
+* if the distance between the head and any tail segment is less than the 
+* defined SNAKE_SIZE. If such a collision is detected, the function returns true.
+*
+* @return true if the snake's head has collided with its tail, false otherwise.
+*/
+bool ofApp::check_tail_collision(){
+	if(snake->tail.empty()){
+		return false;
+	}
+
+	for(size_t i = 0; i < snake->tail.size(); i++){
+		if(snake->head == snake->tail[i]){
+			return true;
+		}
+	}
+	return false;
+}
+/**
 * @brief Checks if the snake's head has collided with the food.
 * 
 * This function calculates the distance between the snake's head position
@@ -264,15 +348,8 @@ bool ofApp::check_food_collision(){
 	}
 	return false;
 }
-/**
-* Generates a random integer between the specified minimum and maximum values (inclusive).
-*
-* @param min The minimum value of the random number range.
-* @param max The maximum value of the random number range.
-* @return A random integer between min and max (inclusive).
-*/
-int ofApp::random_number(int min, int max){
-	return min + (rand() % (max - min + 1));
-}
 
+int ofApp::random_number(int min, int max) {  // Implementação
+    return min + (rand() % (max - min + 1));
+}
 // end of ofApp.cpp
