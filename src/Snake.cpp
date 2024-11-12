@@ -149,7 +149,7 @@ void Snake::move(){
 * - GROWTH: Increases the snake's length.
 * - INVISIBLE: Makes the snake invisible.
 */
-void Snake::food_eaten(FoodType type){
+void Snake::food_eaten(FoodType type, int* score){
     if(is_effect) return;
 
     switch(type){
@@ -160,6 +160,7 @@ void Snake::food_eaten(FoodType type){
             is_effect = true;
             speed =  speed * 2;
             effect_time = ofGetElapsedTimef();
+            *score += 10;
         }
         break;
     case SUPER_SLOWDOWN:
@@ -169,13 +170,15 @@ void Snake::food_eaten(FoodType type){
             is_effect = true;
             speed = speed / 2;
             effect_time = ofGetElapsedTimef();
+            *score += 10;
         }
         break;
     case GROWTH:
         if(!is_effect){
             cout << "GROWTH" << endl;
             grow();
-            speed = speed + .5f;
+            speed = speed + .25f;
+            *score += 5;
         }
         break;
     case INVISIBLE:
@@ -184,6 +187,7 @@ void Snake::food_eaten(FoodType type){
             is_snake_visible = false;
             is_effect = true;
             effect_time = ofGetElapsedTimef();
+            *score += 30;
         }
         break;
     default:

@@ -32,6 +32,8 @@ class ofApp : public ofBaseApp{
 	int GAME_OVER = 0;					// Indicates the game over state. (0 = not over, 1 = over)
 	Direction last_direction = NONE;	// The last direction the snake was moving in.
 
+	int score = 0;						// The player's score.
+
 	int last_witdh = 0;
 	int last_height = 0;
 
@@ -60,6 +62,7 @@ class ofApp : public ofBaseApp{
 		bool check_tail_collision();
 		bool check_food_collision();
 		int random_number(int min, int max);
+		void draw_score();
 };
 
 // end of ofApp.h

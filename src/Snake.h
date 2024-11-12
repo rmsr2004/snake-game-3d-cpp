@@ -50,7 +50,7 @@ class Snake {
         void draw_tail();
         void resize(int w, int h);
         void move();
-        void food_eaten(FoodType type);
+        void food_eaten(FoodType type, int* score);
         void grow();
         ofVec3f get_direction_vector();
         void decrease();

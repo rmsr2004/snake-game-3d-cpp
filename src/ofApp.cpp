@@ -12,6 +12,9 @@
 
 using namespace std;
 
+#define MAX_X 	gw()-SNAKE_SIZE		// The maximum x-coordinate of the game window
+#define MAX_Y 	gh()-SNAKE_SIZE		// The maximum y-coordinate of the game window
+
 /**
 * @brief Sets up the initial state of the application.
 * 
@@ -44,6 +47,8 @@ void ofApp::setup(){
 void ofApp::update(){
 	if(GAME_OVER == 1){
 		// Game Over
+		snake->is_snake_visible = true;
+		cout << "Game Over" << endl;
 		return;
 	}
 
@@ -61,6 +66,8 @@ void ofApp::update(){
 				if(snake->is_snake_visible == false){
 					snake->is_snake_visible = true;
 				}
+
+				cout << "Effect time passed" << endl;
 			}
 		}
 
@@ -79,7 +86,7 @@ void ofApp::update(){
 		/*	Food Collision	*/
 		if(check_food_collision()){
 			// Eat the food
-			snake->food_eaten(food->get_type());
+			snake->food_eaten(food->get_type(), &score);
 			
 			// Generate a new food
 			food = create_food();
@@ -102,17 +109,18 @@ void ofApp::update(){
 * snake and food objects to render them on the screen.
 */
 void ofApp::draw(){
+	// Draw the world
 	glColor3f(1.0f, 1.0f, 1.0f);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glPushMatrix();
 		glTranslatef(gw()/2, gh()/2, 0);
-		glScalef(gw(), gh(), 1);
+		glScalef(MAX_X, MAX_Y, 1);
 		cube_unit();
 	glPopMatrix();
 
 	snake->draw();			// Draw the snake
 	food->draw_food();		// Draw the food
-
+	draw_score();			// Draw the score
 }
 /**
 * Handles key press events to control the snake's movement, pause/unpause the game,
@@ -126,9 +134,10 @@ void ofApp::draw(){
 *   - Down: OF_KEY_DOWN, 's'
 *   - Left: OF_KEY_LEFT, 'a'
 *   - Right: OF_KEY_RIGHT, 'd'
-* - 'p': Pause/Unpause the game
-* - OF_KEY_ESC: Exit the game
-* - OF_KEY_F12: Toggle fullscreen mode
+*   - 'p': Pause/Unpause the game
+*	- 'r': Restart the game
+*   - OF_KEY_ESC: Exit the game
+*   - OF_KEY_F12: Toggle fullscreen mode
 */
 void ofApp::keyPressed(int key){
 	switch(key){
@@ -234,17 +243,31 @@ void ofApp::toggleDisplayMode(){
 		display_mode = WINDOWED;
 	}
 }
+/**
+* @brief Creates a new food item at a random position not occupied by the snake.
+* 
+* This function generates a new food item with a random position and type. The position
+* is chosen such that it does not overlap with any part of the snake's tail. The type of 
+* food is determined based on probabilities that change with the score to increase the 
+* difficulty of the game. The food type probabilities are:
+* - GROWTH: 85% (decreases with score)
+* - SUPER_SPEED: 5% (increases with score)
+* - SUPER_SLOWDOWN: 5% (increases with score)
+* - INVISIBLE: 5% (increases with score)
+* 
+* @return A pointer to the newly created Food object.
+*/
 Food* ofApp::create_food(){
 	// Get a position that is not occupied by the snake
-	int food_x = random_number(FOOD_SIZE/2, gw()-FOOD_SIZE/2);
-	int food_y = random_number(FOOD_SIZE/2, gh()-FOOD_SIZE/2);
+	int food_x = random_number(FOOD_SIZE/2, MAX_X-FOOD_SIZE/2);
+	int food_y = random_number(FOOD_SIZE/2, MAX_Y-FOOD_SIZE/2);
 	ofVec3f food_position = ofVec3f(food_x, food_y, 0);
 
 	if(snake->tail.size() > 0){
 		for(size_t i = 0; i < snake->tail.size(); i++){
 			while(snake->tail[i] == food_position){
-				food_x = random_number(FOOD_SIZE/2, gw()-FOOD_SIZE/2);
-				food_y = random_number(FOOD_SIZE/2, gh()-FOOD_SIZE/2);
+				food_x = random_number(FOOD_SIZE/2, MAX_X-FOOD_SIZE/2);
+				food_y = random_number(FOOD_SIZE/2, MAX_Y-FOOD_SIZE/2);
 				food_position = ofVec3f(food_x, food_y, 0);
 			}
 		}
@@ -253,18 +276,31 @@ Food* ofApp::create_food(){
 	// Food is not on the snake
 	// Generate a random food type and color
 	// Food type must has probabilities (GROWTH(85) > SUPER_SPEED(5) > SUPER_SLOWDOWN(5) > INVISIBLE(5))
-	int random_type = random_number(0, 99);
-	
+	// Probabilities must change with the score to be more difficult
+	// Food color must be random
+
+	int growth_prob = 85, super_speed_prob = 5, super_slowdown_prob = 5, invisible_prob = 5;
+
+	int difficulty_factor = score/10; 
+
+	growth_prob = max(55, growth_prob - difficulty_factor);
+	super_speed_prob += difficulty_factor/3;
+	super_slowdown_prob += difficulty_factor/3;
+	invisible_prob += difficulty_factor/3;
+
+    int total_prob = growth_prob + super_speed_prob + super_slowdown_prob + invisible_prob;
+    int random_value = random_number(0, total_prob - 1);
+
 	FoodType type;
-	if(random_type < 85){
-		type = GROWTH;
-	} else if(random_type < 90){
-		type = SUPER_SPEED;
-	} else if(random_type < 95){
-		type = SUPER_SLOWDOWN;
-	} else{
-		type = INVISIBLE;
-	}
+    if(random_value < growth_prob){
+        type = GROWTH;
+    } else if (random_value < growth_prob + super_speed_prob) {
+        type =  SUPER_SPEED;
+    } else if (random_value < growth_prob + super_slowdown_prob) {
+        type = SUPER_SLOWDOWN;
+    } else {
+        type = INVISIBLE;
+    }
 
 	int color_index = random_number(0, 4);
 
@@ -281,25 +317,22 @@ Food* ofApp::create_food(){
 */
 bool ofApp::check_snake_collision(){
 	ofVec3f snake_pos = snake->head;
-	if(
-		snake_pos.x < SNAKE_SIZE/2 || snake_pos.x > gw()-SNAKE_SIZE/2 || 
-		snake_pos.y < SNAKE_SIZE/2 || snake_pos.y > gh()-SNAKE_SIZE/2
-	){
+	if(snake_pos.x < SNAKE_SIZE || snake_pos.x > MAX_X || snake_pos.y < SNAKE_SIZE || snake_pos.y > MAX_Y){
 		Direction current_direction = snake->direction;
 		ofVec3f current_position = snake->head;
 
 		switch(current_direction){
 		case UP:
-			snake->head = ofVec3f(current_position.x, SNAKE_SIZE/2, 0);
+			snake->head = ofVec3f(current_position.x, SNAKE_SIZE, 0);
 			break;
 		case DOWN:
-			snake->head = ofVec3f(current_position.x, gh()-SNAKE_SIZE/2, 0);
+			snake->head = ofVec3f(current_position.x, MAX_Y, 0);
 			break;
 		case LEFT:
-			snake->head = ofVec3f(SNAKE_SIZE/2, current_position.y, 0);
+			snake->head = ofVec3f(SNAKE_SIZE, current_position.y, 0);
 			break;
 		case RIGHT:
-			snake->head = ofVec3f(gw()-SNAKE_SIZE/2, current_position.z, 0);
+			snake->head = ofVec3f(MAX_X, current_position.y, 0);
 			break;
 		case NONE:
 		default:
@@ -348,8 +381,25 @@ bool ofApp::check_food_collision(){
 	}
 	return false;
 }
-
-int ofApp::random_number(int min, int max) {  // Implementação
+/**
+* @brief Draws the current score on the screen.
+*
+* This function sets the drawing color to white and displays the current score
+* at a fixed position on the screen using a bitmap string.
+*/
+void ofApp::draw_score(){
+	ofSetColor(255, 255, 255);
+	ofDrawBitmapString("Score: " + to_string(score), 20, 30);
+}
+/**
+* Generates a random integer between the specified minimum and maximum values (inclusive).
+*
+* @param min The minimum value of the random number range.
+* @param max The maximum value of the random number range.
+* @return A random integer between min and max (inclusive).
+*/
+int ofApp::random_number(int min, int max){ 
     return min + (rand() % (max - min + 1));
 }
+
 // end of ofApp.cpp
