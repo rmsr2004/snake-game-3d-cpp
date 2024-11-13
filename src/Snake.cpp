@@ -22,7 +22,7 @@ using namespace std;
 Snake::Snake(ofVec3f pos){
     head.set(pos);
     tail.clear();
-    speed = 1.f;
+    speed = 2.f;
     direction = NONE;
     is_effect = false;
     is_snake_visible = true;
@@ -35,10 +35,10 @@ Snake::Snake(ofVec3f pos){
 * If the snake has more than one segment in its tail, it then calls the 
 * draw_tail() function to draw the rest of the snake's body.
 */
-void Snake::draw(){
+void Snake::draw(int dimension){
     if(is_snake_visible){
-        draw_head();
-        draw_tail();
+        draw_head(dimension);
+        draw_tail(dimension);
     }
 }
 /**
@@ -48,13 +48,17 @@ void Snake::draw(){
 * translates and scales the head of the snake to the appropriate position and
 * size before drawing it using the cube_unit function.
 */
-void Snake::draw_head(){
+void Snake::draw_head(int dimension){
     glColor3f(1.0f, 1.0f, 1.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     glPushMatrix();
         glTranslatef(head.x, head.y, head.z);
-        glScalef(SNAKE_SIZE, SNAKE_SIZE, 0);
+        if(dimension == 0){
+            glScalef(SNAKE_SIZE, SNAKE_SIZE, 0);
+        } else {
+            glScalef(SNAKE_SIZE, SNAKE_SIZE, SNAKE_SIZE);
+        }
         cube_unit();
     glPopMatrix();
 
@@ -70,16 +74,20 @@ void Snake::draw_head(){
 * 
 * @note The first segment of the tail (index 0) is skipped as it is presumably the head of the snake.
 */
-void Snake::draw_tail(){
+void Snake::draw_tail(int dimension){
     if(tail.empty()) return;
     
-    glColor3f(1.0f, 0.0f, 0.0f);
+    glColor3f(0.0f, 1.0f, 0.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     
     for(size_t i = 0; i < tail.size(); i++){
         glPushMatrix();
             glTranslatef(tail[i].x, tail[i].y, tail[i].z);
-            glScalef(SNAKE_SIZE, SNAKE_SIZE, 0);
+            if(dimension == 0){
+                glScalef(SNAKE_SIZE, SNAKE_SIZE, 0);
+            } else {
+                glScalef(SNAKE_SIZE, SNAKE_SIZE, SNAKE_SIZE);
+            }
             cube_unit();
         glPopMatrix();
     }
@@ -186,6 +194,7 @@ void Snake::food_eaten(FoodType type, int* score){
             cout << "INVISIBLE" << endl;
             is_snake_visible = false;
             is_effect = true;
+            aux_speed = speed;
             effect_time = ofGetElapsedTimef();
             *score += 30;
         }

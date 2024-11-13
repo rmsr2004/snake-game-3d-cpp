@@ -45,9 +45,9 @@ class Snake {
         bool is_snake_visible;  // Indicates if the snake is visible
 
         Snake(ofVec3f pos);
-        void draw();
-        void draw_head();
-        void draw_tail();
+        void draw(int dimension);
+        void draw_head(int dimension);
+        void draw_tail(int dimension);
         void resize(int w, int h);
         void move();
         void food_eaten(FoodType type, int* score);

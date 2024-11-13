@@ -62,7 +62,7 @@ class Food {
     public:
         Food(ofVec3f position, FoodType type, int color_index);
 
-        void draw_food();
+        void draw_food(int dimension);
         void resize(int w, int h);
         void set_position(ofVec3f position);
         ofVec3f get_position();

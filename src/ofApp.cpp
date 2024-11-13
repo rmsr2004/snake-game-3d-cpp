@@ -9,11 +9,13 @@
 #include "Food.h"
 #include "cg_extras.h"
 #include "cg_drawing_extras.h"
+#include "cg_cam_extras.h"
 
 using namespace std;
 
 #define MAX_X 	gw()-SNAKE_SIZE		// The maximum x-coordinate of the game window
 #define MAX_Y 	gh()-SNAKE_SIZE		// The maximum y-coordinate of the game window
+#define MAX_Z   100					// The maximum z-coordinate of the game window
 
 /**
 * @brief Sets up the initial state of the application.
@@ -22,13 +24,20 @@ using namespace std;
 * The first food item will always be red and will increase the snake's size.
 */
 void ofApp::setup(){
-	snake = new Snake(ofVec3f(gw()/2, gh()/2, 0));	// Create a new snake at the center of the screen
-
 	/*
-	*	Creates first food. The first food will always be red and will increase the snake's size.
+	*	OpenGl and OpenFrameworks setup
 	*/
 
-	food = create_food();
+	ofSetFrameRate(60);
+	glEnable(GL_DEPTH_TEST);
+
+
+	/*
+	*	Snake Game Setup
+	*/
+	
+	snake = new Snake(ofVec3f(gw()/2, gh()/2, 0));	// Create a new snake at the center of the screen
+	food = create_food();	// Create the first food
 }
 /**
 * @brief Updates the game state.
@@ -109,18 +118,41 @@ void ofApp::update(){
 * snake and food objects to render them on the screen.
 */
 void ofApp::draw(){
+	if(dimension == _2D){
+		// 2d setup
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+
+		glOrtho(0, gw(), 0, gh(), -1, 1);
+
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+	}
+
+	if(dimension == _3D){
+		// 3d setup
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+
+        lookat(
+            -gw()/2, gh()/2, 700,            				// Camera position
+            snake->head.x, snake->head.y, snake->head.z,  	// Target position (snake head)
+            0, 1, 0                              			// Up vector
+        );
+	}
+
 	// Draw the world
 	glColor3f(1.0f, 1.0f, 1.0f);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glPushMatrix();
 		glTranslatef(gw()/2, gh()/2, 0);
-		glScalef(MAX_X, MAX_Y, 1);
+		glScalef(MAX_X, MAX_Y, 500);
 		cube_unit();
 	glPopMatrix();
 
-	snake->draw();			// Draw the snake
-	food->draw_food();		// Draw the food
-	draw_score();			// Draw the score
+	snake->draw((int)(dimension));		// Draw the snake
+	food->draw_food((int)(dimension));	// Draw the food
+	draw_score();						// Draw the score
 }
 /**
 * Handles key press events to control the snake's movement, pause/unpause the game,
@@ -136,6 +168,7 @@ void ofApp::draw(){
 *   - Right: OF_KEY_RIGHT, 'd'
 *   - 'p': Pause/Unpause the game
 *	- 'r': Restart the game
+*	- 't': Change the dimension
 *   - OF_KEY_ESC: Exit the game
 *   - OF_KEY_F12: Toggle fullscreen mode
 */
@@ -147,14 +180,22 @@ void ofApp::keyPressed(int key){
 		if(snake->direction == DOWN || snake->direction == UP){
 			break;
 		}
-		snake->direction = UP;
+		
+		if(dimension == _2D) 
+			snake->direction = DOWN;	// glOrtho inverts the y-axis
+		else
+			snake->direction = UP;
 		break;
 	case OF_KEY_DOWN:
 	case 's':
 		if(snake->direction == UP || snake->direction == DOWN){
 			break;
 		}
-		snake->direction = DOWN;
+
+		if(dimension == _2D) 
+			snake->direction = UP;	// glOrtho inverts the y-axis
+		else
+			snake->direction = DOWN;
 		break;
 	case OF_KEY_LEFT:	
 	/*
@@ -190,6 +231,20 @@ void ofApp::keyPressed(int key){
 			setup();
 		}
 		break;
+	case 't': {
+		// Change the dimension
+		if(dimension == _2D){
+			dimension = _3D;
+		} else{
+			dimension = _2D;
+		}
+
+		// invert food position
+		ofVec3f food_pos = food->get_position();
+		ofVec3f new_pos = ofVec3f(food_pos.x, gh() - food_pos.y, food_pos.z);
+		food->set_position(new_pos);
+		break;
+	}
 	case OF_KEY_ESC:
 		// Exit the game
 		ofExit();

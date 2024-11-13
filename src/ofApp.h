@@ -9,6 +9,7 @@
 #include "Snake.h"
 #include "Food.h"
 
+
 #define WINDOW_WIDTH 	1024	// The width of the window
 #define WINDOW_HEIGHT 	768		// The height of the window
 
@@ -23,6 +24,11 @@ typedef enum{
 	FULLSCREEN,
 	WINDOWED
 } DisplayMode;
+
+typedef enum{
+	_2D,
+	_3D
+} Dimension;
 
 class ofApp : public ofBaseApp{
 	Snake* snake;
@@ -39,6 +45,8 @@ class ofApp : public ofBaseApp{
 
 	DisplayMode display_mode = WINDOWED;
 	DisplayMode last_display_mode = display_mode;
+
+	Dimension dimension = _2D;
 
 	public:
 		void setup();

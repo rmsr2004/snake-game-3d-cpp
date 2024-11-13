@@ -48,12 +48,16 @@ Food::Food(ofVec3f position, FoodType type, int color_index) : color(RED) {
 * 
 * The food object is drawn using a unit cube scaled by FOOD_SIZE.
 */
-void Food::draw_food(){
+void Food::draw_food(int dimension){
     glColor3f(color.r, color.g, color.b);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glPushMatrix();
         glTranslatef(position.x, position.y, position.z);
-        glScalef(FOOD_SIZE, FOOD_SIZE, 0);
+        if(dimension == 0){
+            glScalef(FOOD_SIZE, FOOD_SIZE, 0);
+        } else {
+            glScalef(FOOD_SIZE, FOOD_SIZE, FOOD_SIZE);
+        }
         cube_unit();
     glPopMatrix();
 }
