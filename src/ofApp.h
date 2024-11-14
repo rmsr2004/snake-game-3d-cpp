@@ -27,26 +27,34 @@ typedef enum{
 
 typedef enum{
 	_2D,
-	_3D
+	_3D,
+	FIRST_PERSON
 } Dimension;
 
 class ofApp : public ofBaseApp{
 	Snake* snake;
 	Food* food;
 
-	int GAME_PAUSED = 0;				// Indicates the paused state of the game. (0 = not paused, 1 = paused)
-	int GAME_OVER = 0;					// Indicates the game over state. (0 = not over, 1 = over)
-	Direction last_direction = NONE;	// The last direction the snake was moving in.
+	int GAME_PAUSED;					// Indicates the paused state of the game. (0 = not paused, 1 = paused)
+	int GAME_OVER;						// Indicates the game over state. (0 = not over, 1 = over)
+	Direction last_direction;			// The last direction the snake was moving in.
 
-	int score = 0;						// The player's score.
+	int score;							// The player's score.
 
-	int last_witdh = 0;
-	int last_height = 0;
+	int last_witdh;
+	int last_height;
 
-	DisplayMode display_mode = WINDOWED;
-	DisplayMode last_display_mode = display_mode;
+	DisplayMode display_mode;
+	DisplayMode last_display_mode;
 
-	Dimension dimension = _2D;
+	Dimension dimension;
+
+	ofVec3f cam_pos;
+	float angleX;
+	float angleY;
+	float rotation_speedX;
+	float rotation_speedY;
+	float distance;
 
 	public:
 		void setup();
@@ -71,6 +79,7 @@ class ofApp : public ofBaseApp{
 		bool check_food_collision();
 		int random_number(int min, int max);
 		void draw_score();
+		void update_cam_pos();
 };
 
 // end of ofApp.h

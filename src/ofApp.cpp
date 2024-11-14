@@ -28,6 +28,15 @@ void ofApp::setup(){
 	*	OpenGl and OpenFrameworks setup
 	*/
 
+	display_mode = WINDOWED;
+	last_display_mode = display_mode;
+	last_witdh = 0;
+	last_height = 0;
+	dimension = _2D;
+	angleX = 0, angleY = 0;
+	rotation_speedX = 0, rotation_speedY = 0;
+	distance = 700;
+
 	ofSetFrameRate(60);
 	glEnable(GL_DEPTH_TEST);
 
@@ -38,6 +47,10 @@ void ofApp::setup(){
 	
 	snake = new Snake(ofVec3f(gw()/2, gh()/2, 0));	// Create a new snake at the center of the screen
 	food = create_food();	// Create the first food
+	score = 0;
+	GAME_PAUSED = 0;				
+	GAME_OVER = 0;						
+	last_direction = NONE;	
 }
 /**
 * @brief Updates the game state.
@@ -62,6 +75,13 @@ void ofApp::update(){
 	}
 
 	if(GAME_PAUSED != 1){
+		// Update camera position if the dimension is 3D
+		if(dimension == _3D){
+			angleX += rotation_speedX;
+			angleY += rotation_speedY;
+			update_cam_pos();
+		}
+
 		if(snake->is_effect){
 			/*
 			*	Verify if the snake has an effect and if the effect time has passed.
@@ -131,14 +151,31 @@ void ofApp::draw(){
 
 	if(dimension == _3D){
 		// 3d setup
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
 
         lookat(
-            -gw()/2, gh()/2, 700,            				// Camera position
+			cam_pos.x, cam_pos.y, cam_pos.z,            	// Camera position
             snake->head.x, snake->head.y, snake->head.z,  	// Target position (snake head)
             0, 1, 0                              			// Up vector
         );
+	}
+
+	if(dimension == FIRST_PERSON){
+		// First person setup
+		//perspective(120, 1, 700);
+
+		//glMatrixMode(GL_MODELVIEW);
+		//glLoadIdentity();
+
+		//ofVec3f target;
+		//target = snake->head + 50*snake->get_direction_vector();
+
+		//lookat(
+		//	snake->head.x, snake->head.y, snake->head.z,	// Camera position (snake head)
+		//	target.x, target.y, target.z,					// Target position (snake head + direction)
+		//	0, 1, 0											// Up vector
+		//);
 	}
 
 	// Draw the world
@@ -173,6 +210,7 @@ void ofApp::draw(){
 *   - OF_KEY_F12: Toggle fullscreen mode
 */
 void ofApp::keyPressed(int key){
+	key = tolower(key);
 	switch(key){
 	// Movement keys
 	case OF_KEY_UP:
@@ -197,10 +235,7 @@ void ofApp::keyPressed(int key){
 		else
 			snake->direction = DOWN;
 		break;
-	case OF_KEY_LEFT:	
-	/*
-	*	Snake movement logic
-	*/
+	case OF_KEY_LEFT:
 	case 'a':
 		if(snake->direction == RIGHT || snake->direction == LEFT){
 			break;
@@ -215,6 +250,35 @@ void ofApp::keyPressed(int key){
 		snake->direction = RIGHT;
 		break;
 	// end of movement keys
+
+	// Camera movement
+	case 'i':
+		rotation_speedY = 0.5;
+		break;
+	case 'k':
+		rotation_speedY = -0.5;
+		break;
+	case 'j':
+		rotation_speedX = -0.5;
+		break;
+	case 'l':
+		rotation_speedX = 0.5;
+		break;
+	case 'o':
+		// Reset camera position
+		angleX = 0;
+		angleY = 0;
+		distance = 700;
+		rotation_speedX = 0;
+		rotation_speedY = 0;
+		break;
+	case '+':
+		distance += 10;
+		break;
+	case '-':
+		distance -= 10;
+		break;
+	// end of camera movement
 
 	case 'p':
 		// Pause / Unpause the game
@@ -232,7 +296,7 @@ void ofApp::keyPressed(int key){
 		}
 		break;
 	case 't': {
-		// Change the dimension
+		// Change the dimension between 2D and 3D
 		if(dimension == _2D){
 			dimension = _3D;
 		} else{
@@ -245,6 +309,10 @@ void ofApp::keyPressed(int key){
 		food->set_position(new_pos);
 		break;
 	}
+	case 'u':
+		// Change the dimension to first person
+		dimension = FIRST_PERSON;
+		break;
 	case OF_KEY_ESC:
 		// Exit the game
 		ofExit();
@@ -257,7 +325,18 @@ void ofApp::keyPressed(int key){
 		break;
 	}	
 }
-void ofApp::keyReleased(int key){}
+void ofApp::keyReleased(int key){
+	switch(key){
+	case 'i':
+	case 'k':
+		rotation_speedY = 0;
+		break;
+	case 'j':
+	case 'l':
+		rotation_speedX = 0;
+		break;
+	}
+}
 void ofApp::mouseMoved(int x, int y ){}
 void ofApp::mouseDragged(int x, int y, int button){}
 void ofApp::mousePressed(int x, int y, int button){}
@@ -455,6 +534,15 @@ void ofApp::draw_score(){
 */
 int ofApp::random_number(int min, int max){ 
     return min + (rand() % (max - min + 1));
+}
+
+void ofApp::update_cam_pos(){
+    float radX = ofDegToRad(angleX);
+    float radY = ofDegToRad(angleY);
+
+    cam_pos.x = distance * cos(radY) * sin(radX);
+    cam_pos.y = distance * sin(radY);
+    cam_pos.z = distance * cos(radY) * cos(radX);
 }
 
 // end of ofApp.cpp
