@@ -124,7 +124,7 @@ void ofApp::update(){
 
 	if(GAME_PAUSED == 1){
 		// Pause the game
-		snake->tail[0] = snake->tail[0];
+		snake->head = snake->head;
 		snake->direction = last_direction;
 	}
 }
@@ -138,6 +138,10 @@ void ofApp::update(){
 * snake and food objects to render them on the screen.
 */
 void ofApp::draw(){
+	if(show_instructions){
+		draw_instructions();
+	}
+
 	if(dimension == _2D){
 		// 2d setup
 		glMatrixMode(GL_PROJECTION);
@@ -154,11 +158,11 @@ void ofApp::draw(){
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 
-        lookat(
+		lookat(
 			cam_pos.x, cam_pos.y, cam_pos.z,            	// Camera position
-            snake->head.x, snake->head.y, snake->head.z,  	// Target position (snake head)
-            0, 1, 0                              			// Up vector
-        );
+			snake->head.x, snake->head.y, snake->head.z,  	// Target position (snake head)
+			0, 1, 0                              			// Up vector
+		);
 	}
 
 	if(dimension == FIRST_PERSON){
@@ -223,6 +227,8 @@ void ofApp::keyPressed(int key){
 			snake->direction = DOWN;	// glOrtho inverts the y-axis
 		else
 			snake->direction = UP;
+		
+		show_instructions = false;
 		break;
 	case OF_KEY_DOWN:
 	case 's':
@@ -234,6 +240,8 @@ void ofApp::keyPressed(int key){
 			snake->direction = UP;	// glOrtho inverts the y-axis
 		else
 			snake->direction = DOWN;
+
+		show_instructions = false;
 		break;
 	case OF_KEY_LEFT:
 	case 'a':
@@ -241,6 +249,8 @@ void ofApp::keyPressed(int key){
 			break;
 		}
 		snake->direction = LEFT;
+
+		show_instructions = false;
 		break;
 	case OF_KEY_RIGHT:
 	case 'd':
@@ -248,6 +258,8 @@ void ofApp::keyPressed(int key){
 			break;
 		}
 		snake->direction = RIGHT;
+
+		show_instructions = false;
 		break;
 	// end of movement keys
 
@@ -543,6 +555,28 @@ void ofApp::update_cam_pos(){
     cam_pos.x = distance * cos(radY) * sin(radX);
     cam_pos.y = distance * sin(radY);
     cam_pos.z = distance * cos(radY) * cos(radX);
+}
+
+void ofApp::draw_instructions(){
+	// Create a rectangle to display the instructions
+	int width = 500, height = 600;
+	int x = gw()/2 , y = gh()/2;
+
+	glColor4f(0.0f, 0.0f, 0.0f, 1.f);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPushMatrix();
+		glTranslatef(x, y, 0);
+		glScalef(width, height, 0);
+		cube_unit();
+	glPopMatrix();
+
+	// Display the instructions text
+
+	string text = "Game Rules:\n\n- Use arrow keys to control the snake.\n- Avoid walls and your own tail.\n- Eat food to grow and gain points.\n- Special food items have different effects.\n- Press 'p' to pause/unpause the game.\n- Press 'r' to restart the game.\n- Press 't' to change the dimension ('u' to first person).\n- Control camera position with 'i', 'k', 'j', 'l'\n- Control camera zoom with '+' and '-'\n- 'o' to reset camera settings\n- Press 'f12' to toggle fullscreen mode.\n\nPress any movement key to start the game.";
+
+    ofSetColor(255);
+	ofDrawBitmapString(text, gw()/2 - 220, gh()/2 - 250);
+	ofDrawBitmapString("Developed by Rodrigo Rodrigues", gw()/2 - 220, gh()/2 + 250);
 }
 
 // end of ofApp.cpp

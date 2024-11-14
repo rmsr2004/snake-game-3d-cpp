@@ -37,6 +37,10 @@ class ofApp : public ofBaseApp{
 
 	int GAME_PAUSED;					// Indicates the paused state of the game. (0 = not paused, 1 = paused)
 	int GAME_OVER;						// Indicates the game over state. (0 = not over, 1 = over)
+	bool show_instructions = true;		// Indicates whether to show the instructions on the screen.
+										// It is iniatialized here to show the instructions only when the game starts for
+										// the first time.
+
 	Direction last_direction;			// The last direction the snake was moving in.
 
 	int score;							// The player's score.
@@ -80,6 +84,7 @@ class ofApp : public ofBaseApp{
 		int random_number(int min, int max);
 		void draw_score();
 		void update_cam_pos();
+		void draw_instructions();
 };
 
 // end of ofApp.h
