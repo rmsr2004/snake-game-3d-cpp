@@ -53,7 +53,9 @@ void ofApp::setup(){
 	score = 0;
 	GAME_PAUSED = 0;				
 	GAME_OVER = 0;						
-	last_direction = NONE;	
+	last_direction = NONE;
+
+	particles.clear();
 }
 /**
 * @brief Updates the game state.
@@ -73,18 +75,47 @@ void ofApp::update(){
 	if(GAME_OVER == 1){
 		// Game Over
 		snake->is_snake_visible = true;
-		//cout << "Game Over" << endl;
-		// DRAW GAME OVER SCREEN
-		//
-		//
-		//
-		//
-		//
-		//
+		GAME_OVER = 2;
+		int n = 50;
+		if(snake->tail.size() > 5){
+			n = 100;
+		}
+		for(int i = 0; i < n; i++){
+            Particle aux;
+			if(dimension == _2D){
+            	aux.setup(
+					snake->head.x-SNAKE_SIZE, snake->head.x + SNAKE_SIZE, 
+					gh()-snake->head.y-SNAKE_SIZE, gh()-snake->head.y + SNAKE_SIZE, 
+					0, 0
+				);
+			} else if(dimension == _3D){
+				aux.setup(
+					snake->head.x - SNAKE_SIZE, snake->head.x + SNAKE_SIZE, 
+					snake->head.y - SNAKE_SIZE, snake->head.y + SNAKE_SIZE, 
+					snake->head.z - SNAKE_SIZE, snake->head.z + SNAKE_SIZE
+				);
+			} else if(dimension == _PERSPECTIVE){
+				aux.setup(
+					snake->head.x-SNAKE_SIZE, snake->head.x + SNAKE_SIZE, 
+					snake->head.y-SNAKE_SIZE, snake->head.y + SNAKE_SIZE,
+					snake->head.z-SNAKE_SIZE, snake->head.z + SNAKE_SIZE
+				);	
+			}
+            particles.push_back(aux);
+        }
+	}
+
+	if(GAME_OVER == 2){
+		for(int i = 0; i < particles.size(); i++){
+            particles[i].update();
+            if(particles[i].dead){
+                particles.erase(particles.begin() + i);
+            }
+        }
 		return;
 	}
 
-	if(GAME_PAUSED != 1){
+	if(GAME_PAUSED != 1 && GAME_OVER == 0){
 		/*
 		*
 		*
@@ -149,6 +180,9 @@ void ofApp::update(){
 * including the snake, food, score, and direction arrow.
 */
 void ofApp::draw(){
+	glViewport(0, 0, gw(), gh());
+
+
 	if(show_instructions){
 		draw_instructions();
 	}
@@ -157,11 +191,14 @@ void ofApp::draw(){
 		draw_pause();
 	}
 
-	if(GAME_OVER == 1){
+	for(int i = 0; i<particles.size(); i++){
+        particles[i].draw();
+    }
+
+	if(GAME_OVER == 2){
 		draw_game_over();
 	}
 
-	glViewport(0, 0, gw(), gh());
 
 	if(dimension == _2D){
 		// 2d setup
@@ -240,7 +277,6 @@ void ofApp::draw(){
 		draw_direction_arrow();
 	}
 }
-
 /**
 * @brief Handles key press events to control the game.
 * 
@@ -273,7 +309,7 @@ void ofApp::draw(){
 */
 void ofApp::keyPressed(int key){
 	key = tolower(key);
-	if(GAME_OVER == 1){
+	if(GAME_OVER == 2){
 		if(key == 'r'){
 			GAME_OVER = 0;
 			setup();
@@ -645,8 +681,8 @@ void ofApp::toggleDisplayMode(){
 */
 Food* ofApp::create_food(){
 	// Get a position that is not occupied by the snake and his tail
-	int food_x = random_number(FOOD_SIZE/2, MAX_X-FOOD_SIZE/2);
-	int food_y = random_number(FOOD_SIZE/2, MAX_Y-FOOD_SIZE/2);
+	int food_x = random_number(FOOD_SIZE*1.5, MAX_X-FOOD_SIZE/2);
+	int food_y = random_number(FOOD_SIZE*1.5, MAX_Y-FOOD_SIZE/2);
 	if(dimension == _PERSPECTIVE){
 		food_y = gh();
 	}
@@ -996,5 +1032,6 @@ float ofApp::map(float value, float inMin, float inMax, float outMin, float outM
 int ofApp::random_number(int min, int max){ 
     return min + (rand() % (max - min + 1));
 }
+
 
 // end of ofApp.cpp

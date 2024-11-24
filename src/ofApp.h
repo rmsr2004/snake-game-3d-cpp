@@ -8,7 +8,7 @@
 #include "ofMain.h"
 #include "Snake.h"
 #include "Food.h"
-
+#include "Particle.h"
 
 #define WINDOW_WIDTH 	1024	// The width of the window
 #define WINDOW_HEIGHT 	768		// The height of the window
@@ -60,6 +60,8 @@ class ofApp : public ofBaseApp{
 	float rotation_speedX;
 	float rotation_speedY;
 	float distance;
+	
+	vector<Particle> particles;
 
 	public:
 		void setup();
