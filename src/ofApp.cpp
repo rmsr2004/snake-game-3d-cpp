@@ -15,7 +15,7 @@ using namespace std;
 
 #define MAX_X 	gw()-SNAKE_SIZE		// The maximum x-coordinate of the game window
 #define MAX_Y 	gh()-SNAKE_SIZE		// The maximum y-coordinate of the game window
-#define MAX_Z   100					// The maximum z-coordinate of the game window
+#define MAX_Z   1000				// The maximum z-coordinate of the game window
 
 /**
 * @brief Sets up the initial state of the application.
@@ -27,15 +27,18 @@ void ofApp::setup(){
 	/*
 	*	OpenGl and OpenFrameworks setup
 	*/
-
+	// Set the display mode
 	display_mode = WINDOWED;
+	// Resize functionality settings
 	last_display_mode = display_mode;
 	last_witdh = 0;
 	last_height = 0;
+	// Set the first dimension
 	dimension = _2D;
+	// Camera settings
 	angleX = 0, angleY = 0;
 	rotation_speedX = 0, rotation_speedY = 0;
-	distance = 700;
+	distance = 1000;
 
 	ofSetFrameRate(60);
 	glEnable(GL_DEPTH_TEST);
@@ -70,11 +73,26 @@ void ofApp::update(){
 	if(GAME_OVER == 1){
 		// Game Over
 		snake->is_snake_visible = true;
-		cout << "Game Over" << endl;
+		//cout << "Game Over" << endl;
+		// DRAW GAME OVER SCREEN
+		//
+		//
+		//
+		//
+		//
+		//
 		return;
 	}
 
 	if(GAME_PAUSED != 1){
+		/*
+		*
+		*
+		*	Game is running....
+		*
+		*
+		*/
+
 		// Update camera position if the dimension is 3D
 		if(dimension == _3D){
 			angleX += rotation_speedX;
@@ -95,27 +113,21 @@ void ofApp::update(){
 				if(snake->is_snake_visible == false){
 					snake->is_snake_visible = true;
 				}
-
-				cout << "Effect time passed" << endl;
 			}
 		}
 
-		snake->move();
+		snake->move();	// Move the snake
 		last_direction = snake->direction;
 
-		/*	Collision Detection	*/
-		if(check_snake_collision()){
+		// Collisions Detection	
+		// Check if the snake has collided with itself or with the tail
+		if(check_snake_collision() || check_tail_collision()){
 			GAME_OVER = 1;
 		}
-
-		if(check_tail_collision()){
-			GAME_OVER = 1;
-		}
-
-		/*	Food Collision	*/
+		// Check if the snake has collided with the food
 		if(check_food_collision()){
 			// Eat the food
-			snake->food_eaten(food->get_type(), &score);
+			snake->food_eaten(food->type, &score);
 			
 			// Generate a new food
 			food = create_food();
@@ -129,18 +141,27 @@ void ofApp::update(){
 	}
 }
 /**
-* @brief Draws the game elements on the screen.
-*
-* This function is responsible for rendering the game elements, including
-* a wireframe cube, the snake, and the food. It sets the color to white,
-* switches to wireframe mode, and applies transformations to position and
-* scale the cube. After drawing the cube, it calls the draw methods of the
-* snake and food objects to render them on the screen.
+* @brief Draws the current frame of the application.
+* 
+* This function handles the rendering of the game scene based on the current
+* dimension mode (_2D, _3D, _PERSPECTIVE, _FIRST_PERSON). It sets up the 
+* appropriate OpenGL matrices and viewport, and then draws the game elements 
+* including the snake, food, score, and direction arrow.
 */
 void ofApp::draw(){
 	if(show_instructions){
 		draw_instructions();
 	}
+
+	if(GAME_PAUSED == 1){
+		draw_pause();
+	}
+
+	if(GAME_OVER == 1){
+		draw_game_over();
+	}
+
+	glViewport(0, 0, gw(), gh());
 
 	if(dimension == _2D){
 		// 2d setup
@@ -165,7 +186,20 @@ void ofApp::draw(){
 		);
 	}
 
-	if(dimension == FIRST_PERSON){
+	if(dimension == _PERSPECTIVE){
+		// Perspective setup
+		perspective(60.f, 1.f, 1000.f);
+
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		lookat(
+			gw()/2, gh()*2, 700, 		// Camera position
+			gw()/2, gh(), 0, 			// Target position
+			0, 1, 0						// Up vector
+		);
+	}
+
+	if(dimension == _FIRST_PERSON){
 		// First person setup
 		//perspective(120, 1, 700);
 
@@ -187,64 +221,268 @@ void ofApp::draw(){
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glPushMatrix();
 		glTranslatef(gw()/2, gh()/2, 0);
-		glScalef(MAX_X, MAX_Y, 500);
+		glScalef(MAX_X, MAX_Y, MAX_Z);
 		cube_unit();
 	glPopMatrix();
-
+	
 	snake->draw((int)(dimension));		// Draw the snake
 	food->draw_food((int)(dimension));	// Draw the food
-	draw_score();						// Draw the score
+
+	// Draw the score
+	// The score is drawn in 2D mode to ensure it is always visible
+    ofPushMatrix();
+		ofSetupScreen();	// Set up the screen for 2D drawing
+		draw_score();
+    ofPopMatrix();
+
+	// Draw Direction Arrow
+	if(dimension != _2D){
+		draw_direction_arrow();
+	}
 }
+
 /**
-* Handles key press events to control the snake's movement, pause/unpause the game,
-* exit the game, and toggle fullscreen mode.
-*
+* @brief Handles key press events to control the game.
+* 
 * @param key The key code of the pressed key.
-*
+* 
+* This function processes various key presses to control the game's views, snake movement, camera movement, and game state.
+* 
 * Key mappings:
-* - Movement keys:
-*   - Up: OF_KEY_UP, 'w'
-*   - Down: OF_KEY_DOWN, 's'
-*   - Left: OF_KEY_LEFT, 'a'
-*   - Right: OF_KEY_RIGHT, 'd'
-*   - 'p': Pause/Unpause the game
-*	- 'r': Restart the game
-*	- 't': Change the dimension
-*   - OF_KEY_ESC: Exit the game
-*   - OF_KEY_F12: Toggle fullscreen mode
+* - '1': Switch to 2D view.
+* - '2': Switch to 3D view.
+* - '3': Switch to Perspective view.
+* - '4': Switch to First Person view (not implemented yet).
+* - OF_KEY_UP: Move the snake up.
+* - OF_KEY_DOWN: Move the snake down.
+* - OF_KEY_LEFT: Move the snake left.
+* - OF_KEY_RIGHT: Move the snake right.
+* - 'w': Move the snake forward (3D/Perspective view only).
+* - 's': Move the snake backward (3D/Perspective view only).
+* - 'i': Rotate camera up (3D view only).
+* - 'k': Rotate camera down (3D view only).
+* - 'j': Rotate camera left (3D view only).
+* - 'l': Rotate camera right (3D view only).
+* - 'o': Reset camera position (3D view only).
+* - '+': Zoom in (3D view only).
+* - '-': Zoom out (3D view only).
+* - 'p': Pause/Unpause the game.
+* - 'r': Restart the game if it is over.
+* - OF_KEY_ESC: Exit the game.
+* - OF_KEY_F12: Toggle fullscreen mode.
 */
 void ofApp::keyPressed(int key){
 	key = tolower(key);
+	if(GAME_OVER == 1){
+		if(key == 'r'){
+			GAME_OVER = 0;
+			setup();
+		}
+		return;
+	}
 	switch(key){
-	// Movement keys
-	case OF_KEY_UP:
-	case 'w':
-		if(snake->direction == DOWN || snake->direction == UP){
+	// Switch views
+	case '1':
+		/*
+		*	2D View
+		*/
+		if(dimension == _2D){
 			break;
 		}
 		
-		if(dimension == _2D) 
-			snake->direction = DOWN;	// glOrtho inverts the y-axis
-		else
+		glDisable(GL_CULL_FACE);
+
+		// Fix the direction when changing to 2D
+		if(dimension == _3D){
+			// Invert snake and food positions
+			snake->head = ofVec3f(snake->head.x, gh()-snake->head.y, 0);
+			food->position = ofVec3f(food->position.x, gh()-food->position.y, 0);
+			for(size_t i = 0; i < snake->tail.size(); i++){
+				snake->tail[i] = ofVec3f(snake->tail[i].x, gh()-snake->tail[i].y, 0);
+			}
+
+			dimension = _2D;
+
+			if(snake->direction == FORWARD){
+				snake->direction = UP;
+				break;
+			}
+
+			if(snake->direction == BACKWARD){
+				snake->direction = DOWN;
+				break;
+			}
+
+			if(snake->direction == UP){
+				snake->direction = DOWN;
+				break;
+			}
+
+			if(snake->direction == DOWN){
+				snake->direction = UP;
+				break;
+			}
+		}
+
+		if(dimension == _PERSPECTIVE){
+			// Convert Z position to Y position
+			snake->head.y = MAX_Y - map(snake->head.z, -MAX_Z/2, MAX_Z, SNAKE_SIZE, MAX_Y);
+			snake->head.z = 0;
+
+			food->position.y = MAX_Y - map(food->position.z, -MAX_Z/2, MAX_Z, SNAKE_SIZE, MAX_Y);
+			food->position.z = 0;
+
+			for(size_t i = 0; i < snake->tail.size(); i++){
+				snake->tail[i].y = MAX_Y - map(snake->tail[i].z, -MAX_Z/2, MAX_Z, SNAKE_SIZE, MAX_Y);
+				snake->tail[i].z = 0;
+			}
+
+			if(snake->direction == FORWARD){
+				snake->direction = UP;
+			}
+
+			if(snake->direction == BACKWARD){
+				snake->direction = DOWN;
+			}
+		}
+
+		dimension = _2D;
+
+		break;
+	case '2':
+		/*
+		*	3D View
+		*/
+		if(dimension == _3D){
+			break;
+		}
+
+		glDisable(GL_CULL_FACE);
+
+		if(dimension == _PERSPECTIVE){
+			// We need to take off snake from the top face of the cube
+			snake->head = ofVec3f(snake->head.x, snake->head.y - SNAKE_SIZE, snake->head.z);
+			food->position = ofVec3f(food->position.x, food->position.y - FOOD_SIZE, food->position.z);
+			for(size_t i = 0; i < snake->tail.size(); i++){
+				snake->tail[i] = ofVec3f(snake->tail[i].x, snake->tail[i].y - SNAKE_SIZE, snake->tail[i].z);
+			}
+		}
+
+		if(dimension == _2D){
+			// Invert snake and food positions
+			snake->head = ofVec3f(snake->head.x, gh()-snake->head.y, snake->head.z);
+			food->position = ofVec3f(food->position.x, gh()-food->position.y, food->position.z);
+			for(size_t i = 0; i < snake->tail.size(); i++){
+				snake->tail[i] = ofVec3f(snake->tail[i].x, gh()-snake->tail[i].y, snake->tail[i].z);
+			}
+		}
+
+		dimension = _3D;
+
+		// Fix the direction when changing to 3D
+		if(snake->direction == UP){
+			snake->direction = DOWN;
+			break;
+		}
+
+		if(snake->direction == DOWN){
 			snake->direction = UP;
+			break;
+		}
+
+		break;
+	case '3':
+		/*
+		*	Perspective View
+		*/
+		if(dimension == _PERSPECTIVE){
+			break;
+		}
+
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+
+		if(dimension == _2D){
+			// z -> [-500, 500]
+			// y (2D) -> [SNAKE_SIZE, MAX_Y] -> [25, 743]
+
+			snake->head.z = -map(snake->head.y, 25, 743, -500, 500);
+			snake->head.y = gh();
+
+			food->position.z = -map(food->position.y, 25, 743, -500, 500);
+			food->position.y = gh();
+
+			for(size_t i = 0; i < snake->tail.size(); i++){
+				snake->tail[i].z = -map(snake->tail[i].y, 25, 743, -500, 500);
+				snake->tail[i].y = gh();
+			}
+
+		}
+		
+		if(dimension == _3D){
+			// translate elements to the top face of the cube
+			snake->head = ofVec3f(snake->head.x, gh(), snake->head.z);
+			food->position = ofVec3f(food->position.x, gh(), food->position.z);
+			for(size_t i = 0; i < snake->tail.size(); i++){
+				snake->tail[i] = ofVec3f(snake->tail[i].x, gh(), snake->tail[i].z);
+			}
+		}
+
+		if(snake->direction == UP){
+			snake->direction = FORWARD;
+		}
+
+		if(snake->direction == DOWN){
+			snake->direction = BACKWARD;
+		}
+
+		dimension = _PERSPECTIVE;
+
+		break;
+	case '4':
+		/*
+		*	First Person View
+		*   Not implemented yet
+		*/
+		glDisable(GL_CULL_FACE);
+		dimension = _FIRST_PERSON;
+		break;
+	// end of switch views
+	
+	// Movement keys
+	case OF_KEY_UP:
+		if(snake->direction == DOWN || snake->direction == UP){
+			break;
+		}
+		snake->direction = UP;
+
+		if(dimension == _2D){
+			snake->direction = DOWN;
+		}
+
+		if(dimension == _PERSPECTIVE){
+			snake->direction = BACKWARD;
+		}
 		
 		show_instructions = false;
 		break;
 	case OF_KEY_DOWN:
-	case 's':
 		if(snake->direction == UP || snake->direction == DOWN){
 			break;
 		}
+		snake->direction = DOWN;
 
-		if(dimension == _2D) 
-			snake->direction = UP;	// glOrtho inverts the y-axis
-		else
-			snake->direction = DOWN;
+		if(dimension == _2D){
+			snake->direction = UP;
+		}
+
+		if(dimension == _PERSPECTIVE){
+			snake->direction = FORWARD;
+		}
 
 		show_instructions = false;
 		break;
 	case OF_KEY_LEFT:
-	case 'a':
 		if(snake->direction == RIGHT || snake->direction == LEFT){
 			break;
 		}
@@ -253,7 +491,6 @@ void ofApp::keyPressed(int key){
 		show_instructions = false;
 		break;
 	case OF_KEY_RIGHT:
-	case 'd':
 		if(snake->direction == LEFT || snake->direction == RIGHT){
 			break;
 		}
@@ -261,34 +498,52 @@ void ofApp::keyPressed(int key){
 
 		show_instructions = false;
 		break;
+	case 'w':
+		if(dimension != _2D){
+			if(snake->direction == FORWARD || snake->direction == BACKWARD){
+				break;
+			}
+			snake->direction = FORWARD;
+		}
+		break;
+	case 's':
+		if(dimension != _2D){
+			if(snake->direction == BACKWARD || snake->direction == FORWARD){
+				break;
+			}
+			snake->direction = BACKWARD;
+		}
+		break;
 	// end of movement keys
 
 	// Camera movement
 	case 'i':
-		rotation_speedY = 0.5;
+		if(dimension == _3D) rotation_speedY = 0.5;
 		break;
 	case 'k':
-		rotation_speedY = -0.5;
+		if(dimension == _3D) rotation_speedY = -0.5;
 		break;
 	case 'j':
-		rotation_speedX = -0.5;
+		if(dimension == _3D) rotation_speedX = -0.5;
 		break;
 	case 'l':
-		rotation_speedX = 0.5;
+		if(dimension == _3D) rotation_speedX = 0.5;
 		break;
 	case 'o':
 		// Reset camera position
-		angleX = 0;
-		angleY = 0;
-		distance = 700;
-		rotation_speedX = 0;
-		rotation_speedY = 0;
+		if(dimension == _3D){
+			angleX = 0;
+			angleY = 0;
+			distance = 700;
+			rotation_speedX = 0;
+			rotation_speedY = 0;
+		}
 		break;
 	case '+':
-		distance += 10;
+		if(dimension == _3D) distance += 10;
 		break;
 	case '-':
-		distance -= 10;
+		if(dimension == _3D) distance -= 10;
 		break;
 	// end of camera movement
 
@@ -307,24 +562,6 @@ void ofApp::keyPressed(int key){
 			setup();
 		}
 		break;
-	case 't': {
-		// Change the dimension between 2D and 3D
-		if(dimension == _2D){
-			dimension = _3D;
-		} else{
-			dimension = _2D;
-		}
-
-		// invert food position
-		ofVec3f food_pos = food->get_position();
-		ofVec3f new_pos = ofVec3f(food_pos.x, gh() - food_pos.y, food_pos.z);
-		food->set_position(new_pos);
-		break;
-	}
-	case 'u':
-		// Change the dimension to first person
-		dimension = FIRST_PERSON;
-		break;
 	case OF_KEY_ESC:
 		// Exit the game
 		ofExit();
@@ -337,6 +574,15 @@ void ofApp::keyPressed(int key){
 		break;
 	}	
 }
+/**
+* Handles the event when a key is released.
+*
+* @param key The key code of the released key.
+*
+* This function stops the rotation of the object in the 3D space when the 'i', 'k', 'j', or 'l' keys are released.
+* - 'i' and 'k' keys stop the rotation around the Y-axis.
+* - 'j' and 'l' keys stop the rotation around the X-axis.
+*/
 void ofApp::keyReleased(int key){
 	switch(key){
 	case 'i':
@@ -349,12 +595,6 @@ void ofApp::keyReleased(int key){
 		break;
 	}
 }
-void ofApp::mouseMoved(int x, int y ){}
-void ofApp::mouseDragged(int x, int y, int button){}
-void ofApp::mousePressed(int x, int y, int button){}
-void ofApp::mouseReleased(int x, int y, int button){}
-void ofApp::mouseEntered(int x, int y){}
-void ofApp::mouseExited(int x, int y){}
 /**
 * @brief Handles the window resize event.
 * 
@@ -404,17 +644,33 @@ void ofApp::toggleDisplayMode(){
 * @return A pointer to the newly created Food object.
 */
 Food* ofApp::create_food(){
-	// Get a position that is not occupied by the snake
+	// Get a position that is not occupied by the snake and his tail
 	int food_x = random_number(FOOD_SIZE/2, MAX_X-FOOD_SIZE/2);
 	int food_y = random_number(FOOD_SIZE/2, MAX_Y-FOOD_SIZE/2);
-	ofVec3f food_position = ofVec3f(food_x, food_y, 0);
+	if(dimension == _PERSPECTIVE){
+		food_y = gh();
+	}
+	int food_z = random_number(-MAX_Z/2+FOOD_SIZE/2, MAX_Z/2-FOOD_SIZE/2);
+	if(dimension == _2D){
+		food_z = 0;
+	}
+	
+	ofVec3f food_position = ofVec3f(food_x, food_y, food_z);
 
 	if(snake->tail.size() > 0){
 		for(size_t i = 0; i < snake->tail.size(); i++){
 			while(snake->tail[i] == food_position){
 				food_x = random_number(FOOD_SIZE/2, MAX_X-FOOD_SIZE/2);
 				food_y = random_number(FOOD_SIZE/2, MAX_Y-FOOD_SIZE/2);
-				food_position = ofVec3f(food_x, food_y, 0);
+				if(dimension == _PERSPECTIVE){
+					food_y = gh();
+				}
+				food_z = random_number(-MAX_Z/2+FOOD_SIZE/2, MAX_Z/2-FOOD_SIZE/2);
+				if(dimension == _2D){
+					food_z = 0;
+				}
+
+				food_position = ofVec3f(food_x, food_y, food_z);
 			}
 		}
 	}
@@ -462,23 +718,53 @@ Food* ofApp::create_food(){
 * @return true if the snake has collided with the boundaries, false otherwise.
 */
 bool ofApp::check_snake_collision(){
+	int collision = 0;
 	ofVec3f snake_pos = snake->head;
-	if(snake_pos.x < SNAKE_SIZE || snake_pos.x > MAX_X || snake_pos.y < SNAKE_SIZE || snake_pos.y > MAX_Y){
-		Direction current_direction = snake->direction;
-		ofVec3f current_position = snake->head;
+	Direction current_direction;
+	ofVec3f current_position;
 
+	if(dimension == _2D){
+		if(snake_pos.x < SNAKE_SIZE || snake_pos.x > MAX_X || snake_pos.y < SNAKE_SIZE || snake_pos.y > MAX_Y){
+			current_direction = snake->direction;
+			current_position = snake->head;
+
+			collision = 1;
+		}
+	} else if(dimension == _PERSPECTIVE){
+		if(snake_pos.x < SNAKE_SIZE || snake_pos.x > MAX_X || snake_pos.z < -MAX_Z/2+SNAKE_SIZE/2 || snake_pos.z > MAX_Z/2-SNAKE_SIZE/2){
+			current_direction = snake->direction;
+			current_position = snake->head;
+
+			collision = 1;
+		}
+	} else {
+		if(snake_pos.x < SNAKE_SIZE || snake_pos.x > MAX_X || snake_pos.y < SNAKE_SIZE || snake_pos.y > MAX_Y || snake_pos.z < -MAX_Z/2 || snake_pos.z > MAX_Z/2){
+			current_direction = snake->direction;
+			current_position = snake->head;
+
+			collision = 1;
+		}
+	}
+
+	if(collision == 1){
 		switch(current_direction){
 		case UP:
-			snake->head = ofVec3f(current_position.x, SNAKE_SIZE, 0);
+			snake->head = ofVec3f(current_position.x, SNAKE_SIZE, current_position.z);
 			break;
 		case DOWN:
-			snake->head = ofVec3f(current_position.x, MAX_Y, 0);
+			snake->head = ofVec3f(current_position.x, MAX_Y, current_position.z);
 			break;
 		case LEFT:
-			snake->head = ofVec3f(SNAKE_SIZE, current_position.y, 0);
+			snake->head = ofVec3f(SNAKE_SIZE, current_position.y, current_position.z);
 			break;
 		case RIGHT:
-			snake->head = ofVec3f(MAX_X, current_position.y, 0);
+			snake->head = ofVec3f(MAX_X, current_position.y, current_position.z);
+			break;
+		case FORWARD:
+			snake->head = ofVec3f(current_position.x, current_position.y, MAX_Z/2-SNAKE_SIZE/2);
+			break;
+		case BACKWARD:
+			snake->head = ofVec3f(current_position.x, current_position.y, -MAX_Z/2+SNAKE_SIZE/2);
 			break;
 		case NONE:
 		default:
@@ -520,7 +806,7 @@ bool ofApp::check_tail_collision(){
 */
 bool ofApp::check_food_collision(){
 	ofVec3f snake_pos = snake->head;
-	ofVec3f food_pos = food->get_position();
+	ofVec3f food_pos = food->position;
 	if(snake_pos.distance(food_pos) < SNAKE_SIZE){
 		// Collision detected
 		return true;
@@ -538,16 +824,36 @@ void ofApp::draw_score(){
 	ofDrawBitmapString("Score: " + to_string(score), 20, 30);
 }
 /**
-* Generates a random integer between the specified minimum and maximum values (inclusive).
+* @brief Draws the pause screen.
 *
-* @param min The minimum value of the random number range.
-* @param max The maximum value of the random number range.
-* @return A random integer between min and max (inclusive).
+* This function is responsible for rendering the pause screen when the game is paused.
+* It displays a "Game Paused" message and instructions to unpause the game.
 */
-int ofApp::random_number(int min, int max){ 
-    return min + (rand() % (max - min + 1));
+void ofApp::draw_pause(){
+	// Draw the pause screen
+	ofSetColor(255, 255, 255);
+	ofDrawBitmapString("Game Paused", gw()/2 - 50, gh()/2);
+	ofDrawBitmapString("Press 'p' to unpause", gw()/2 - 50, gh()/2 + 20);
 }
-
+/**
+* @brief Draws the game over screen.
+*
+* This function sets the color to white and draws the "Game Over" message
+* along with instructions to restart the game at the center of the screen.
+*/
+void ofApp::draw_game_over(){
+	// Draw the game over screen
+	ofSetColor(255, 255, 255);
+	ofDrawBitmapString("Game Over", gw()/2 - 50, gh()/2);
+	ofDrawBitmapString("Press 'r' to restart", gw()/2 - 50, gh()/2 + 20);
+}
+/**
+* @brief Updates the camera position based on the current angles and distance.
+*
+* This function calculates the new camera position in 3D space using spherical coordinates.
+* The angles angleX and angleY are converted from degrees to radians and used to compute
+* the new x, y, and z coordinates of the camera position.
+*/
 void ofApp::update_cam_pos(){
     float radX = ofDegToRad(angleX);
     float radY = ofDegToRad(angleY);
@@ -556,7 +862,14 @@ void ofApp::update_cam_pos(){
     cam_pos.y = distance * sin(radY);
     cam_pos.z = distance * cos(radY) * cos(radX);
 }
-
+/**
+* @brief Draws the instructions for the snake game on the screen.
+*
+* This function creates a rectangle to display the instructions and then
+* renders the instructions text within that rectangle. The instructions
+* include the game rules, controls, and other relevant information for
+* the player.
+*/
 void ofApp::draw_instructions(){
 	// Create a rectangle to display the instructions
 	int width = 500, height = 600;
@@ -572,11 +885,116 @@ void ofApp::draw_instructions(){
 
 	// Display the instructions text
 
-	string text = "Game Rules:\n\n- Use arrow keys to control the snake.\n- Avoid walls and your own tail.\n- Eat food to grow and gain points.\n- Special food items have different effects.\n- Press 'p' to pause/unpause the game.\n- Press 'r' to restart the game.\n- Press 't' to change the dimension ('u' to first person).\n- Control camera position with 'i', 'k', 'j', 'l'\n- Control camera zoom with '+' and '-'\n- 'o' to reset camera settings\n- Press 'f12' to toggle fullscreen mode.\n\nPress any movement key to start the game.";
+	string text = "Game Rules:\n\n- Use arrow keys to control the snake.\n- Avoid walls and your own tail.\n- Eat food to grow and gain points.\n- Special food items have different effects.\n- Press 'p' to pause/unpause the game.\n- Press 'r' to restart the game.\n- '1' - 2D, '2' - 3D, '3' - Perspective.\n- Control camera position with 'i', 'k', 'j', 'l'\n- Control camera zoom with '+' and '-'\n- 'o' to reset camera settings\n- Press 'f12' to toggle fullscreen mode.\n\nPress any movement key to start the game.";
 
     ofSetColor(255);
 	ofDrawBitmapString(text, gw()/2 - 220, gh()/2 - 250);
 	ofDrawBitmapString("Developed by Rodrigo Rodrigues", gw()/2 - 220, gh()/2 + 250);
+}
+/**
+* @brief Draws an arrow on the screen with a specified offset.
+*
+* This function draws an arrow starting from a fixed point on the screen and extending
+* to a point defined by the given offsets. The arrow is drawn in 3D space.
+*
+* @param offsetX The offset in the X direction from the starting point of the arrow.
+* @param offsetY The offset in the Y direction from the starting point of the arrow.
+* @param offsetZ The offset in the Z direction from the starting point of the arrow.
+*
+*
+* NOTE: FUNCTION GENERATED BY AI
+*/
+void ofApp::draw_arrow(int offsetX, int offsetY, int offsetZ){
+    ofPushMatrix();
+    ofSetupScreen();
+
+    int arrow_x = gw() - 50;
+    int arrow_y = 50;
+    int arrow_z = 0;
+	
+    float x1 = arrow_x + offsetX;
+    float y1 = arrow_y + offsetY;
+    float z1 = arrow_z + offsetZ;
+
+    ofSetColor(255, 255, 255);
+    ofDrawLine(arrow_x, arrow_y, arrow_z, x1, y1, z1);
+
+    ofVec3f direction(offsetX, offsetY, offsetZ);
+    direction.getNormalized();
+
+    ofVec3f up(0, 1, 0);
+    if(direction == up || direction == -up){
+        up.set(1, 0, 0);
+    }
+
+    ofVec3f perpendicular1 = direction.getCrossed(up).getNormalized();
+
+    float arrowHeadLength = 10.0f;
+    float arrowHeadWidth = 5.0f;
+
+    ofVec3f base1 = ofVec3f(x1, y1, z1) - direction * arrowHeadLength + perpendicular1 * arrowHeadWidth;
+    ofVec3f base2 = ofVec3f(x1, y1, z1) - direction * arrowHeadLength - perpendicular1 * arrowHeadWidth;
+
+    glBegin(GL_TRIANGLES);
+    glVertex3f(x1, y1, z1);
+    glVertex3f(base1.x, base1.y, base1.z);
+    glVertex3f(base2.x, base2.y, base2.z);
+    glEnd();
+
+    ofPopMatrix();
+}
+/**
+* @brief Draws an arrow indicating the direction of the snake.
+*
+* This function draws an arrow based on the current direction of the snake.
+*/
+void ofApp::draw_direction_arrow(){
+	switch(snake->direction){
+	case UP:
+		draw_arrow(0, 30, 0);
+		break;
+	case DOWN:
+		draw_arrow(0, -30, 0);
+		break;
+	case LEFT:
+		draw_arrow(-30, 0, 0);
+		break;
+	case RIGHT:
+		draw_arrow(30, 0, 0);
+		break;
+	case FORWARD:
+		draw_arrow(0, 0, 30);
+		break;
+	case BACKWARD:
+		draw_arrow(0, 0, -30);
+		break;
+	case NONE:
+	default:
+		break;
+	}
+}
+/**
+* Maps a value from one range to another.
+*
+* @param value The value to be mapped.
+* @param inMin The lower bound of the input range.
+* @param inMax The upper bound of the input range.
+* @param outMin The lower bound of the output range.
+* @param outMax The upper bound of the output range.
+* @return The mapped value in the output range.
+*/
+float ofApp::map(float value, float inMin, float inMax, float outMin, float outMax) {
+    return outMin + ((value - inMin) / (inMax - inMin)) * (outMax - outMin);
+}
+/**
+* Generates a random integer between the specified minimum and maximum values (inclusive).
+*
+* @param min The minimum value of the random number range.
+* @param max The maximum value of the random number range.
+* @return A random integer between min and max (inclusive).
+*/
+int ofApp::random_number(int min, int max){ 
+    return min + (rand() % (max - min + 1));
 }
 
 // end of ofApp.cpp

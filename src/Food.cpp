@@ -39,7 +39,6 @@ Food::Food(ofVec3f position, FoodType type, int color_index) : color(RED) {
         break;
     }
 }
-
 /**
 * @brief Draws the food object on the screen.
 * 
@@ -74,42 +73,13 @@ void Food::draw_food(int dimension){
 void Food::resize(int w, int h){
     int width = gw(), height = gh();
 
-    ofVec3f current_position = get_position();
-
     double factor_x = static_cast<double>(width) / static_cast<double>(w);
     double factor_y = static_cast<double>(height) / static_cast<double>(h);
 
-    int new_x = current_position.x * factor_x;
-    int new_y = current_position.y * factor_y;
+    int new_x = position.x * factor_x;
+    int new_y = position.y * factor_y;
     
-    set_position(ofVec3f(new_x, new_y, 0));
-}
-/**
-* @brief Sets the position of the food.
-* 
-* This function updates the position of the food object to the specified
-* coordinates.
-* 
-* @param position The new position of the food as an ofVec3f object.
-*/
-void Food::set_position(ofVec3f position){
-    this->position = position;
-}
-/**
-* @brief Retrieves the current position of the food.
-* 
-* @return ofVec3f The current position of the food as a 3D vector.
-*/
-ofVec3f Food::get_position(){
-    return this->position;
-}
-/**
-* @brief Retrieves the type of the food.
-* 
-* @return FoodType The type of the food.
-*/
-FoodType Food::get_type(){
-    return this->type;
+    position = ofVec3f(new_x, new_y, position.z);
 }
 
 // end of Food.cpp

@@ -153,3 +153,4 @@ inline void cube_malha_unit(GLint m, GLint n) {
 	glPopMatrix();
 }
 
+// end of cg_drawing_extras.h

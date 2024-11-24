@@ -22,6 +22,8 @@ typedef enum {
     DOWN,
     LEFT,
     RIGHT,
+    FORWARD,
+    BACKWARD,
     NONE
 } Direction;
 
@@ -53,8 +55,6 @@ class Snake {
         void food_eaten(FoodType type, int* score);
         void grow();
         ofVec3f get_direction_vector();
-        void decrease();
-        void invisible();
 };
 
 #endif // SNAKE_H

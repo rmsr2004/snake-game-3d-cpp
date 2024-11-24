@@ -22,7 +22,6 @@ typedef enum {
     GROWTH,
     INVISIBLE,
 } FoodType;
-
 /**
 * @struct FoodColor
 * @brief Represents the color of the food in the snake game.
@@ -36,7 +35,6 @@ struct FoodColor {
 
     FoodColor(float red, float green, float blue) : r(red), g(green), b(blue) {}
 };
-
 /*
 * Generation of the different colors of food.
 * RED, GREEN, BLUE, YELLOW, BLACK
@@ -47,26 +45,16 @@ const FoodColor BLUE(0.0f, 0.0f, 1.0f);
 const FoodColor YELLOW(1.0f, 1.0f, 0.0f);
 const FoodColor BLACK(0.0f, 0.0f, 0.0f);
 
-/**
-* @class Food
-* @brief Represents a piece of food in the snake game.
-*
-* The Food class encapsulates the properties and behaviors of a food item
-* in the snake game, including its position, type, and color.
-*/
 class Food {
-    ofVec3f position;
-    FoodType type;
-    FoodColor color;
-
     public:
+        ofVec3f position;
+        FoodType type;
+        FoodColor color;
+
         Food(ofVec3f position, FoodType type, int color_index);
 
         void draw_food(int dimension);
         void resize(int w, int h);
-        void set_position(ofVec3f position);
-        ofVec3f get_position();
-        FoodType get_type();
 };
 
 // end of food.h

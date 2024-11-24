@@ -28,7 +28,8 @@ typedef enum{
 typedef enum{
 	_2D,
 	_3D,
-	FIRST_PERSON
+	_PERSPECTIVE,
+	_FIRST_PERSON
 } Dimension;
 
 class ofApp : public ofBaseApp{
@@ -67,12 +68,6 @@ class ofApp : public ofBaseApp{
 
 		void keyPressed(int key);
 		void keyReleased(int key);
-		void mouseMoved(int x, int y );
-		void mouseDragged(int x, int y, int button);
-		void mousePressed(int x, int y, int button);
-		void mouseReleased(int x, int y, int button);
-		void mouseEntered(int x, int y);
-		void mouseExited(int x, int y);
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
@@ -81,10 +76,15 @@ class ofApp : public ofBaseApp{
 		bool check_snake_collision();
 		bool check_tail_collision();
 		bool check_food_collision();
-		int random_number(int min, int max);
 		void draw_score();
+		void draw_pause();
+		void draw_game_over();
 		void update_cam_pos();
 		void draw_instructions();
+		void draw_arrow(int offsetX, int offsetY, int offsetZ);
+		void draw_direction_arrow();
+		float map(float value, float inMin, float inMax, float outMin, float outMax);
+		int random_number(int min, int max);
 };
 
 // end of ofApp.h

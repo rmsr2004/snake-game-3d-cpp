@@ -121,4 +121,4 @@ inline void getTranslationFromModelView(GLfloat mIn[][4], GLfloat mOut[][4]) {
 	//printMatrix(mOut);
 }
 
-#endif
+#endif	// CG_EXTRAS_H

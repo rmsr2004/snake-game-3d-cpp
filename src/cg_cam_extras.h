@@ -55,5 +55,4 @@ inline void lookat(
 	glMultMatrixf(&camTransformMatrix[0][0]);
 }
 
-
-#endif
+#endif	// CG_CAM_EXTRAS

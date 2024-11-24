@@ -25,7 +25,8 @@
 			"ostream": "cpp",
 			"*.frag": "cpp",
 			"istream": "cpp",
-			"random": "cpp"
+			"random": "cpp",
+			"cmath": "cpp"
 		}
 	}
 }

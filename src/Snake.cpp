@@ -54,7 +54,7 @@ void Snake::draw_head(int dimension){
 
     glPushMatrix();
         glTranslatef(head.x, head.y, head.z);
-        if(dimension == 0){
+        if(dimension == 0){     // 2D
             glScalef(SNAKE_SIZE, SNAKE_SIZE, 0);
         } else {
             glScalef(SNAKE_SIZE, SNAKE_SIZE, SNAKE_SIZE);
@@ -114,7 +114,7 @@ void Snake::resize(int w, int h){
     int new_x = current_position.x * factor_x;
     int new_y = current_position.y * factor_y;
     
-    head = ofVec3f(new_x, new_y, 0);
+    head = ofVec3f(new_x, new_y, head.z);
     
     // Resize the tail
     if(!tail.empty()){
@@ -122,7 +122,7 @@ void Snake::resize(int w, int h){
             ofVec3f current_tail = tail[i];
             int new_tail_x = current_tail.x * factor_x;
             int new_tail_y = current_tail.y * factor_y;
-            tail[i] = ofVec3f(new_tail_x, new_tail_y, 0);
+            tail[i] = ofVec3f(new_tail_x, new_tail_y, current_tail.z);
         }
     }
 }
@@ -142,7 +142,7 @@ void Snake::move(){
             tail[i] = tail[i-1];
         }
         tail[0] = old_head;
-    } 
+    }
 }
 /**
 * @brief Handles the effects of eating different types of food.
@@ -163,7 +163,6 @@ void Snake::food_eaten(FoodType type, int* score){
     switch(type){
     case SUPER_SPEED:
         if(!is_effect){
-            cout << "SUPER SPEED" << endl;
             aux_speed = speed;
             is_effect = true;
             speed =  speed * 2;
@@ -173,7 +172,6 @@ void Snake::food_eaten(FoodType type, int* score){
         break;
     case SUPER_SLOWDOWN:
         if(!is_effect){
-            cout << "SUPER SLOWDOWN" << endl;
             aux_speed = speed;
             is_effect = true;
             speed = speed / 2;
@@ -183,7 +181,6 @@ void Snake::food_eaten(FoodType type, int* score){
         break;
     case GROWTH:
         if(!is_effect){
-            cout << "GROWTH" << endl;
             grow();
             speed = speed + .25f;
             *score += 5;
@@ -191,7 +188,6 @@ void Snake::food_eaten(FoodType type, int* score){
         break;
     case INVISIBLE:
         if(!is_effect){
-            cout << "INVISIBLE" << endl;
             is_snake_visible = false;
             is_effect = true;
             aux_speed = speed;
@@ -200,7 +196,6 @@ void Snake::food_eaten(FoodType type, int* score){
         }
         break;
     default:
-        cout << "DEFAULT" << endl;
         break;
     }
 }
@@ -258,6 +253,12 @@ ofVec3f Snake::get_direction_vector(){
     case RIGHT:
         direction_vector = ofVec3f(1, 0, 0);
         break;
+    case FORWARD:
+        direction_vector = ofVec3f(0, 0, 1);
+        break;
+    case BACKWARD:
+        direction_vector = ofVec3f(0, 0, -1);
+        break;
     case NONE:
     default:
         direction_vector = ofVec3f(0, 0, 0);
@@ -265,7 +266,5 @@ ofVec3f Snake::get_direction_vector(){
     }
     return direction_vector;
 }
-void Snake::decrease(){}
-void Snake::invisible(){}
 
 // end of Snake.cpp
