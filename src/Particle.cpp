@@ -4,6 +4,7 @@
 */
 
 #include "Particle.h"
+#include "Food.h"
 
 void Particle::setup(float xmin, float xmax, float ymin, float ymax, float zmin, float zmax){
     float x = ofRandom(xmin, xmax);
@@ -29,9 +30,9 @@ void Particle::update(){
     }
 }
 
-void Particle::draw(){
+void Particle::draw(float r, float g, float b){
     if(!dead){
-        glColor3f(0., 0.3f, 0.);
+        glColor3f(r, g, b);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         glPushMatrix();
         glTranslatef(pos.x, pos.y, pos.z);

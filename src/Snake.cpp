@@ -49,7 +49,7 @@ void Snake::draw(int dimension){
 * size before drawing it using the cube_unit function.
 */
 void Snake::draw_head(int dimension){
-    glColor3f(0.0f, 0.45f, 0.0f);
+    //glColor3f(0.0f, 0.45f, 0.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     glPushMatrix();

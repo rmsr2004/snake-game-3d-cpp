@@ -26,13 +26,7 @@ Food::Food(ofVec3f position, FoodType type, int color_index) : color(RED) {
         color = GREEN;
         break;
     case 2:
-        color = BLUE;
-        break;
-    case 3:
         color = YELLOW;
-        break;
-    case 4:
-        color = BLACK;
         break;
     default:
         color = RED;
@@ -48,7 +42,7 @@ Food::Food(ofVec3f position, FoodType type, int color_index) : color(RED) {
 * The food object is drawn using a unit cube scaled by FOOD_SIZE.
 */
 void Food::draw_food(int dimension){
-    glColor3f(color.r, color.g, color.b);
+    //glColor3f(color.r, color.g, color.b);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glPushMatrix();
         glTranslatef(position.x, position.y, position.z);

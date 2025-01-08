@@ -41,9 +41,7 @@ struct FoodColor {
 */
 const FoodColor RED(1.0f, 0.0f, 0.0f);
 const FoodColor GREEN(0.0f, 1.0f, 0.0f);
-const FoodColor BLUE(0.0f, 0.0f, 1.0f);
 const FoodColor YELLOW(1.0f, 1.0f, 0.0f);
-const FoodColor BLACK(0.0f, 0.0f, 0.0f);
 
 class Food {
     public:

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "ofMain.h"
+#include "Food.h"
 #include "cg_extras.h"
 #include "cg_drawing_extras.h"
 #include "cg_cam_extras.h"
@@ -18,7 +19,7 @@ class Particle{
 
     void setup(float xmin, float xmax, float ymin, float ymax, float zmin, float zmax);
     void update();
-    void draw();
+    void draw(float r, float g, float b);
 
     ofVec3f pos;
     ofVec3f speed;

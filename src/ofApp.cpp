@@ -7,6 +7,8 @@
 
 #include "Snake.h"
 #include "Food.h"
+#include "Lights.h"
+#include "Materiais.h"
 #include "cg_extras.h"
 #include "cg_drawing_extras.h"
 #include "cg_cam_extras.h"
@@ -42,7 +44,7 @@ void ofApp::setup(){
 
 	ofSetFrameRate(60);
 	glEnable(GL_DEPTH_TEST);
-
+	ofBackground(0, 0, 0);
 
 	/*
 	*	Snake Game Setup
@@ -56,6 +58,96 @@ void ofApp::setup(){
 	last_direction = NONE;
 
 	particles.clear();
+
+
+	/*
+	*	Lighting Setup
+	*/
+
+	mat_index = 0;
+
+	point_on = false;
+	ambient_on = false;
+	spot_on = false;
+	point_ambient = true;
+	point_diffuse = true;
+	point_specular = true;
+	dir_ambient = true;
+	dir_diffuse = true;
+	dir_specular = true;
+	spot_ambient = true;
+	spot_diffuse = true;
+	spot_specular = true;
+
+	customMatCoef = 1;
+
+	lights = new Lights();
+
+	// Set the point light (lamp)
+	lights->point_pos[0] = gw()/2;
+	lights->point_pos[1] = 0.0;
+	lights->point_pos[2] = 0.0;
+
+	lights->point_amb[0] = 1.0;
+	lights->point_amb[1] = 1.0;
+	lights->point_amb[2] = 1.0;
+
+	lights->point_diff[0] = 1.0;
+	lights->point_diff[1] = 1.0;
+	lights->point_diff[2] = 1.0;
+
+	lights->point_spec[0] = 1.0;
+	lights->point_spec[1] = 1.0;
+	lights->point_spec[2] = 1.0;
+
+	// Set the directional light (sun)
+	angle = 0.0f;
+	radius = 1000.0f;
+
+	lights->dir_pos[0] = -100.0;
+	lights->dir_pos[1] = -250.0;
+	lights->dir_pos[2] = -100.0;
+	lights->dir_pos[3] = 0.0;
+
+	lights->dir_direction[0] = 0.0;
+	lights->dir_direction[1] = -1.0;
+	lights->dir_direction[2] = -1.0;
+	lights->dir_direction[3] = 0.0;
+
+	lights->dir_amb[0] = 1.0;
+	lights->dir_amb[1] = 1.0;
+	lights->dir_amb[2] = 0.0;
+
+	lights->dir_diff[0] = 1.0;
+	lights->dir_diff[1] = 1.0;
+	lights->dir_diff[2] = 0.0;
+
+	lights->dir_spec[0] = 1.0;
+	lights->dir_spec[1] = 1.0;
+	lights->dir_spec[2] = 0.0;
+
+	// Set the spot light (flashlight)
+	lights->spot_pos[0] = snake->head.x;
+	lights->spot_pos[1] = snake->head.y + 10;
+	lights->spot_pos[2] = snake->head.z;
+	
+	lights->spot_dir[0] = snake->get_direction_vector().x;
+	lights->spot_dir[1] = snake->get_direction_vector().y;
+	lights->spot_dir[2] = snake->get_direction_vector().z;
+	lights->spot_amb[0] = 1.0;
+	lights->spot_amb[1] = 1.0;
+	lights->spot_amb[2] = 1.0;
+
+	lights->spot_diff[0] = 1.0;
+	lights->spot_diff[1] = 1.0;
+	lights->spot_diff[2] = 1.0;
+
+	lights->spot_spec[0] = 0.5;
+	lights->spot_spec[1] = 0.5;
+	lights->spot_spec[2] = 0.;
+
+	lights->spot_cutoff = 60.0;
+	lights->spot_exponent = 500.0;
 }
 /**
 * @brief Updates the game state.
@@ -74,6 +166,7 @@ void ofApp::setup(){
 void ofApp::update(){
 	if(GAME_OVER == 1){
 		// Game Over
+		ambient_on = true;
 		snake->is_snake_visible = true;
 		GAME_OVER = 2;
 		int n = 50;
@@ -124,6 +217,13 @@ void ofApp::update(){
 		*
 		*/
 
+		for(int i = 0; i < particles.size(); i++){
+            particles[i].update();
+            if(particles[i].dead){
+                particles.erase(particles.begin() + i);
+            }
+        }
+
 		// Update camera position if the dimension is 3D
 		if(dimension == _3D){
 			angleX += rotation_speedX;
@@ -159,10 +259,58 @@ void ofApp::update(){
 		if(check_food_collision()){
 			// Eat the food
 			snake->food_eaten(food->type, &score);
+
+			for(int i = 0; i < 100; i++){
+				Particle aux;
+				if(dimension == _2D){
+					aux.setup(
+						snake->head.x-SNAKE_SIZE, snake->head.x + SNAKE_SIZE, 
+						gh()-snake->head.y-SNAKE_SIZE, gh()-snake->head.y + SNAKE_SIZE, 
+						0, 0
+					);
+				} else if(dimension == _3D){
+					aux.setup(
+						snake->head.x - SNAKE_SIZE, snake->head.x + SNAKE_SIZE, 
+						snake->head.y - SNAKE_SIZE, snake->head.y + SNAKE_SIZE, 
+						snake->head.z - SNAKE_SIZE, snake->head.z + SNAKE_SIZE
+					);
+				} else if(dimension == _PERSPECTIVE){
+					aux.setup(
+						snake->head.x-SNAKE_SIZE, snake->head.x + SNAKE_SIZE, 
+						snake->head.y-SNAKE_SIZE, snake->head.y + SNAKE_SIZE,
+						snake->head.z-SNAKE_SIZE, snake->head.z + SNAKE_SIZE
+					);	
+				}
+				particles.push_back(aux);
+			}
 			
 			// Generate a new food
 			food = create_food();
 		}
+
+		// update the spot light position and direction
+		lights->spot_pos[0] = snake->head.x;
+		lights->spot_pos[1] = snake->head.y;
+		lights->spot_pos[2] = snake->head.z;
+
+		ofVec3f dir = snake->get_direction_vector().getNormalized();
+		
+		lights->spot_dir[0] = dir.x;
+		lights->spot_dir[1] = dir.y;
+		lights->spot_dir[2] = dir.z;
+
+		// updat direction light position
+		angle += 0.005f;
+
+		lights->dir_pos[0] = gw()/2 + radius * cos(angle);
+		lights->dir_pos[1] = gh()/2 + radius * sin(angle);
+		lights->dir_pos[2] = 0;
+		lights->dir_pos[3] = 0.0f;
+
+		lights->dir_direction[0] = -cos(angle);
+		lights->dir_direction[1] = -sin(angle);
+		lights->dir_direction[2] = 0.0f;
+		lights->dir_direction[3] = 0.0f;
 	}
 
 	if(GAME_PAUSED == 1){
@@ -180,8 +328,14 @@ void ofApp::update(){
 * including the snake, food, score, and direction arrow.
 */
 void ofApp::draw(){
-	glViewport(0, 0, gw(), gh());
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_COLOR_MATERIAL);
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT);
+	glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
+	glColorMaterial(GL_FRONT_AND_BACK, GL_SPECULAR);
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
+	glViewport(0, 0, gw(), gh());
 
 	if(show_instructions){
 		draw_instructions();
@@ -192,13 +346,17 @@ void ofApp::draw(){
 	}
 
 	for(int i = 0; i<particles.size(); i++){
-        particles[i].draw();
-    }
+		loadMaterial(2);
+		if(GAME_OVER == 2){
+        	particles[i].draw(0.0f, 0.45f, 0.0f);
+		} else {
+			particles[i].draw(food->color.r, food->color.g, food->color.b);
+		}
+	}
 
 	if(GAME_OVER == 2){
 		draw_game_over();
 	}
-
 
 	if(dimension == _2D){
 		// 2d setup
@@ -254,7 +412,8 @@ void ofApp::draw(){
 	}
 
 	// Draw the world
-	glColor3f(1.0f, 1.0f, 1.0f);
+	loadMaterial(16);
+	//glColor3f(1.0f, 1.0f, 1.0f);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glPushMatrix();
 		glTranslatef(gw()/2, gh()/2, 0);
@@ -262,7 +421,9 @@ void ofApp::draw(){
 		cube_unit();
 	glPopMatrix();
 	
+	loadMaterial(14);
 	snake->draw((int)(dimension));		// Draw the snake
+	loadMaterial(19);
 	food->draw_food((int)(dimension));	// Draw the food
 
 	// Draw the score
@@ -276,6 +437,138 @@ void ofApp::draw(){
 	if(dimension != _2D){
 		draw_direction_arrow();
 	}
+
+	// Draw the lights
+	loadMaterial(16);
+	lights->draw_light(0, (int)(dimension));	// Draw the point light
+	loadMaterial(10);
+	lights->draw_light(1, (int)(dimension));	// Draw the directional light
+
+	// Start lighting
+	glEnable(GL_LIGHTING);
+	glEnable(GL_NORMALIZE);
+	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, true);
+
+	if(ambient_on){
+		ambientLight[0] = 1.;//R
+		ambientLight[1] = 0.5;//G
+		ambientLight[2] = 0.5;//B
+		ambientLight[3] = 1;//useless
+	} else {
+		ambientLight[0] = 0.0;
+		ambientLight[1] = 0.0;
+		ambientLight[2] = 0.0;
+		ambientLight[3] = 1.0;
+	}
+
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambientLight);
+
+	GLfloat nulL_vector[4] = {0.0, 0.0, 0.0, 1.0};
+
+	// Point light
+	glLightfv(GL_LIGHT0, GL_POSITION, lights->point_pos);
+	if(point_ambient){
+		glLightfv(GL_LIGHT0, GL_AMBIENT, lights->point_amb);
+	} else {
+		glLightfv(GL_LIGHT0, GL_AMBIENT, nulL_vector);
+	}
+	if(point_diffuse){
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, lights->point_diff);
+	} else {
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, nulL_vector);
+	}
+	if(point_specular){
+		glLightfv(GL_LIGHT0, GL_SPECULAR, lights->point_spec);
+	} else {
+		glLightfv(GL_LIGHT0, GL_SPECULAR, nulL_vector);
+	}
+
+	lights->point_atc = 1;
+	lights->point_atl = 0.0001;
+	lights->point_atq = 0.00001;
+	glLightf(GL_LIGHT0, GL_CONSTANT_ATTENUATION, lights->point_atc);
+	glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, lights->point_atl);
+	glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, lights->point_atq);
+
+	if(point_on){
+		glEnable(GL_LIGHT0);
+	} else {
+		glDisable(GL_LIGHT0);
+	}
+
+	// Directional light
+
+	glLightfv(GL_LIGHT1, GL_POSITION, lights->dir_direction);
+	if(dir_ambient){
+		glLightfv(GL_LIGHT1, GL_AMBIENT, lights->dir_amb);
+	} else {
+		glLightfv(GL_LIGHT1, GL_AMBIENT, nulL_vector);
+	}
+	if(dir_diffuse){
+		glLightfv(GL_LIGHT1, GL_DIFFUSE, lights->dir_diff);
+	} else {
+		glLightfv(GL_LIGHT1, GL_DIFFUSE, nulL_vector);
+	}
+	if(dir_specular){
+		glLightfv(GL_LIGHT1, GL_SPECULAR, lights->dir_spec);
+	} else {
+		glLightfv(GL_LIGHT1, GL_SPECULAR, nulL_vector);
+	}
+
+	if(dir_on){
+		glEnable(GL_LIGHT1);
+	} else {
+		glDisable(GL_LIGHT1);
+	}
+
+	// Spot light
+
+	glLightfv(GL_LIGHT2, GL_POSITION, lights->spot_pos);
+	glLightfv(GL_LIGHT2, GL_SPOT_DIRECTION, lights->spot_dir);
+
+	if(spot_ambient){
+		glLightfv(GL_LIGHT2, GL_AMBIENT, lights->spot_amb);
+	} else {
+		glLightfv(GL_LIGHT2, GL_AMBIENT, nulL_vector);
+	}
+	if(spot_diffuse){
+		glLightfv(GL_LIGHT2, GL_DIFFUSE, lights->spot_diff);
+	} else {
+		glLightfv(GL_LIGHT2, GL_DIFFUSE, nulL_vector);
+	}
+	if(spot_specular){
+		glLightfv(GL_LIGHT2, GL_SPECULAR, lights->spot_spec);
+	} else {
+		glLightfv(GL_LIGHT2, GL_SPECULAR, nulL_vector);
+	}
+	glLightf(GL_LIGHT2, GL_SPOT_EXPONENT, lights->spot_exponent);
+	glLightf(GL_LIGHT2, GL_SPOT_CUTOFF, lights->spot_cutoff);
+
+	lights->spot_atc = 1.;
+	lights->spot_atl = 0.;
+	lights->spot_atq = 0.;
+	glLightf(GL_LIGHT2, GL_CONSTANT_ATTENUATION, lights->spot_atc);
+	glLightf(GL_LIGHT2, GL_LINEAR_ATTENUATION, lights->spot_atl);
+	glLightf(GL_LIGHT2, GL_QUADRATIC_ATTENUATION, lights->spot_atq);
+
+	if(spot_on){
+		glEnable(GL_LIGHT2);
+	} else {
+		glDisable(GL_LIGHT2);
+	}
+
+	// Set the material properties
+	//GLfloat mat_diffuse[] = {0.6f, 0.6f, 0.6f, 1.0f};  // Difusão cinza claro
+	//GLfloat mat_ambient[] = {0.3f, 0.3f, 0.3f, 1.0f};  // Componente ambiente
+	//GLfloat mat_specular[] = {0.8f, 0.8f, 0.8f, 1.0f}; // Brilho especular
+	//GLfloat mat_shininess[] = {50.0f};                 // Brilho intenso
+	//
+	//glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+	//glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+	//glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+	//glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+
+	loadMaterial(2);
 }
 /**
 * @brief Handles key press events to control the game.
@@ -500,6 +793,7 @@ void ofApp::keyPressed(int key){
 			snake->direction = BACKWARD;
 		}
 		
+		if(show_instructions == true) ambient_on = false;
 		show_instructions = false;
 		break;
 	case OF_KEY_DOWN:
@@ -515,7 +809,8 @@ void ofApp::keyPressed(int key){
 		if(dimension == _PERSPECTIVE){
 			snake->direction = FORWARD;
 		}
-
+		
+		if(show_instructions == true) ambient_on = false;
 		show_instructions = false;
 		break;
 	case OF_KEY_LEFT:
@@ -524,6 +819,7 @@ void ofApp::keyPressed(int key){
 		}
 		snake->direction = LEFT;
 
+		if(show_instructions == true) ambient_on = false;
 		show_instructions = false;
 		break;
 	case OF_KEY_RIGHT:
@@ -531,7 +827,8 @@ void ofApp::keyPressed(int key){
 			break;
 		}
 		snake->direction = RIGHT;
-
+		
+		if(show_instructions == true) ambient_on = false;
 		show_instructions = false;
 		break;
 	case 'w':
@@ -587,8 +884,10 @@ void ofApp::keyPressed(int key){
 		// Pause / Unpause the game
 		if(GAME_PAUSED == 0){
 			GAME_PAUSED = 1;
+			ambient_on = true;
 		} else{
 			GAME_PAUSED = 0;
+			ambient_on = false;
 		}
 		break;
 	case 'r':
@@ -597,6 +896,46 @@ void ofApp::keyPressed(int key){
 			GAME_OVER = 0;
 			setup();
 		}
+		break;
+	case 'a':
+		// Toggle ambient light
+		ambient_on = !ambient_on;
+		break;
+	case OF_KEY_F5:
+		point_on = !point_on;
+		break;
+	case OF_KEY_F6:
+		dir_on = !dir_on;
+		break;
+	case OF_KEY_F7:
+		spot_on = !spot_on;
+		break;
+	case '5':
+		point_ambient = !point_ambient;
+		break;
+	case '6':
+		point_diffuse = !point_diffuse;
+		break;
+	case '7':
+		point_specular = !point_specular;
+		break;
+	case '8':
+		dir_ambient = !dir_ambient;
+		break;
+	case '9':
+		dir_diffuse = !dir_diffuse;
+		break;
+	case '0':
+		dir_specular = !dir_specular;
+		break;
+	case '\'':
+		spot_ambient = !spot_ambient;
+		break;
+	case OF_KEY_BACKSPACE:
+		spot_diffuse = !spot_diffuse;
+		break;
+	case OF_KEY_RETURN:
+		spot_specular = !spot_specular;
 		break;
 	case OF_KEY_ESC:
 		// Exit the game
@@ -609,6 +948,25 @@ void ofApp::keyPressed(int key){
 		ofToggleFullscreen();
 		break;
 	}	
+}
+
+void ofApp::mousePressed(int x, int y, int button){
+	switch(button){
+	case OF_MOUSE_BUTTON_LEFT:
+		// Change the material index
+		mat_index -= 1;
+		if(mat_index < 0){
+			mat_index = NUM_MAT - 1;
+		}
+		break;
+	case OF_MOUSE_BUTTON_RIGHT:
+		// Change the material index
+		mat_index += 1;
+		if(mat_index > NUM_MAT){
+			mat_index = 0;
+		}
+		break;
+	}
 }
 /**
 * Handles the event when a key is released.
@@ -740,7 +1098,7 @@ Food* ofApp::create_food(){
         type = INVISIBLE;
     }
 
-	int color_index = random_number(0, 4);
+	int color_index = random_number(0, 2);
 
 	return new Food(food_position, type, color_index);
 }
@@ -910,6 +1268,8 @@ void ofApp::draw_instructions(){
 	// Create a rectangle to display the instructions
 	int width = 500, height = 600;
 	int x = gw()/2 , y = gh()/2;
+
+	ambient_on = true;
 
 	glColor4f(0.0f, 0.0f, 0.0f, 1.f);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

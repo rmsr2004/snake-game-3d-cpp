@@ -8,6 +8,7 @@
 #include "ofMain.h"
 #include "Snake.h"
 #include "Food.h"
+#include "Lights.h"
 #include "Particle.h"
 
 #define WINDOW_WIDTH 	1024	// The width of the window
@@ -49,6 +50,9 @@ class ofApp : public ofBaseApp{
 	int last_witdh;
 	int last_height;
 
+	bool is_flashing;
+	float flash_timer;
+
 	DisplayMode display_mode;
 	DisplayMode last_display_mode;
 
@@ -63,12 +67,42 @@ class ofApp : public ofBaseApp{
 	
 	vector<Particle> particles;
 
+	Lights* lights;
+	GLfloat ambientLight[4];
+	GLfloat customMatAmb[4];
+	GLfloat customMatDif[4];
+	GLfloat customMatSpec[4];
+	GLfloat customMatCoef;
+
+	float angle;
+	float radius;
+
+	bool point_on;
+	bool dir_on;
+	bool spot_on;
+	bool ambient_on;
+
+	bool point_ambient;
+	bool point_diffuse;
+	bool point_specular;
+	
+	bool dir_ambient;
+	bool dir_diffuse;
+	bool dir_specular;
+
+	bool spot_ambient;
+	bool spot_diffuse;
+	bool spot_specular;
+
+	int mat_index;
+
 	public:
 		void setup();
 		void update();
 		void draw();
 
 		void keyPressed(int key);
+		void mousePressed(int x, int y, int button);
 		void keyReleased(int key);
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
